@@ -1,3 +1,272 @@
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Sample team data
+const sampleTeamData = [
+    { 
+        id: 'U001', name: 'Nicole Ruybal', role: 'Primary Owner', state: 'Colorado', 
+        messages: 156, reactions: 234, comments: 67, responseTime: 1.8, 
+        engagementScore: 96, trend: 'up', performance: 'excellent',
+        lastActive: '2024-07-02T09:30:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U002', name: 'Chloe Entner', role: 'Team Member', state: 'Colorado', 
+        messages: 134, reactions: 189, comments: 45, responseTime: 2.1, 
+        engagementScore: 89, trend: 'up', performance: 'good',
+        lastActive: '2024-07-02T10:15:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U003', name: 'Crystal Foley', role: 'Team Member', state: 'Colorado', 
+        messages: 142, reactions: 198, comments: 52, responseTime: 1.9, 
+        engagementScore: 92, trend: 'up', performance: 'excellent',
+        lastActive: '2024-07-02T08:45:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U004', name: 'Jeff Goulet', role: 'Team Member', state: 'Colorado', 
+        messages: 118, reactions: 167, comments: 38, responseTime: 2.4, 
+        engagementScore: 85, trend: 'stable', performance: 'good',
+        lastActive: '2024-07-02T11:20:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U005', name: 'Hannah Jackson', role: 'Team Member', state: 'Colorado', 
+        messages: 128, reactions: 176, comments: 43, responseTime: 2.2, 
+        engagementScore: 88, trend: 'up', performance: 'good',
+        lastActive: '2024-07-02T09:00:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U006', name: 'Amy Partlow', role: 'Team Member', state: 'Colorado', 
+        messages: 139, reactions: 195, comments: 49, responseTime: 2.0, 
+        engagementScore: 91, trend: 'up', performance: 'excellent',
+        lastActive: '2024-07-02T10:30:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U007', name: 'Haley Santiago', role: 'Team Member', state: 'Colorado', 
+        messages: 125, reactions: 172, comments: 41, responseTime: 2.3, 
+        engagementScore: 87, trend: 'stable', performance: 'good',
+        lastActive: '2024-07-02T08:15:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U008', name: 'Constance Montgomery', role: 'Team Member', state: 'West Texas', 
+        messages: 148, reactions: 218, comments: 58, responseTime: 1.7, 
+        engagementScore: 94, trend: 'up', performance: 'excellent',
+        lastActive: '2024-07-02T09:45:00Z', timezone: 'CT', isActive: true
+    },
+    { 
+        id: 'U009', name: 'Kris Schmidt', role: 'Team Member', state: 'West Texas', 
+        messages: 137, reactions: 201, comments: 51, responseTime: 2.0, 
+        engagementScore: 90, trend: 'up', performance: 'excellent',
+        lastActive: '2024-07-02T11:00:00Z', timezone: 'CT', isActive: true
+    },
+    { 
+        id: 'U010', name: 'Sandi Franklin', role: 'Team Member', state: 'West Texas', 
+        messages: 122, reactions: 178, comments: 39, responseTime: 2.5, 
+        engagementScore: 86, trend: 'stable', performance: 'good',
+        lastActive: '2024-07-02T08:30:00Z', timezone: 'CT', isActive: true
+    },
+    { 
+        id: 'U011', name: 'Jonathan Barnhart', role: 'Team Member', state: 'West Texas', 
+        messages: 131, reactions: 187, comments: 44, responseTime: 2.2, 
+        engagementScore: 89, trend: 'up', performance: 'good',
+        lastActive: '2024-07-02T10:45:00Z', timezone: 'CT', isActive: true
+    },
+    { 
+        id: 'U012', name: 'Christian Melendez', role: 'Team Member', state: 'West Texas', 
+        messages: 145, reactions: 212, comments: 55, responseTime: 1.8, 
+        engagementScore: 93, trend: 'up', performance: 'excellent',
+        lastActive: '2024-07-02T09:15:00Z', timezone: 'CT', isActive: true
+    },
+    { 
+        id: 'U013', name: 'Scott Duerfeldt', role: 'Team Member', state: 'EPNM', 
+        messages: 127, reactions: 181, comments: 42, responseTime: 2.3, 
+        engagementScore: 88, trend: 'stable', performance: 'good',
+        lastActive: '2024-07-02T10:35:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U014', name: 'Gidget Miller', role: 'Team Member', state: 'EPNM', 
+        messages: 136, reactions: 194, comments: 48, responseTime: 2.1, 
+        engagementScore: 91, trend: 'up', performance: 'excellent',
+        lastActive: '2024-07-02T11:30:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U015', name: 'Ray Woodruff', role: 'Team Member', state: 'EPNM', 
+        messages: 119, reactions: 169, comments: 37, responseTime: 2.6, 
+        engagementScore: 84, trend: 'down', performance: 'good',
+        lastActive: '2024-07-02T08:00:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U016', name: 'Aaron Hartman', role: 'Team Member', state: 'EPNM', 
+        messages: 133, reactions: 192, comments: 46, responseTime: 2.2, 
+        engagementScore: 89, trend: 'up', performance: 'good',
+        lastActive: '2024-07-02T10:35:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U017', name: 'Erica Torres', role: 'Team Member', state: 'EPNM', 
+        messages: 141, reactions: 204, comments: 54, responseTime: 1.9, 
+        engagementScore: 92, trend: 'up', performance: 'excellent',
+        lastActive: '2024-07-02T11:15:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U018', name: 'Jake Alsept', role: 'Team Member', state: 'EPNM', 
+        messages: 124, reactions: 175, comments: 40, responseTime: 2.4, 
+        engagementScore: 85, trend: 'stable', performance: 'good',
+        lastActive: '2024-07-02T08:30:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U019', name: 'Jen Hettum', role: 'Team Member', state: 'EPNM', 
+        messages: 138, reactions: 199, comments: 50, responseTime: 2.0, 
+        engagementScore: 90, trend: 'up', performance: 'excellent',
+        lastActive: '2024-07-02T09:45:00Z', timezone: 'MT', isActive: true
+    },
+    { 
+        id: 'U020', name: 'Hector R Ramirez-Bruno', role: 'Team Member', state: 'EPNM', 
+        messages: 138, reactions: 199, comments: 50, responseTime: 2.3, 
+        engagementScore: 88, trend: 'stable', performance: 'good',
+        lastActive: '2024-07-02T10:05:00Z', timezone: 'MT', isActive: true
+    }
+];
+
+// Store team data - ONLY ONE DECLARATION
+let teamMembers = [...sampleTeamData];
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        teamMemberCount: teamMembers.length,
+        version: '2.0.0',
+        environment: 'render',
+        uptime: process.uptime()
+    });
+});
+
+// API Endpoints
+app.get('/api/slack/test', (req, res) => {
+    res.json({
+        success: true,
+        team: 'Enhanced Slack Dashboard',
+        teamId: 'T1234567890',
+        message: 'Complete dashboard interface deployed successfully on Render!',
+        connectedAt: new Date().toISOString(),
+        features: [
+            'Real-time team analytics',
+            'Multi-regional support',
+            'Advanced month-over-month tracking',
+            'Member leaderboards',
+            'Performance insights'
+        ]
+    });
+});
+
+app.get('/api/slack/users', (req, res) => {
+    res.json({
+        success: true,
+        data: teamMembers,
+        source: 'sample_data',
+        stats: {
+            totalUsers: teamMembers.length,
+            activeUsers: teamMembers.filter(m => m.isActive).length,
+            messagesAnalyzed: teamMembers.reduce((sum, u) => sum + u.messages, 0),
+            reactionsAnalyzed: teamMembers.reduce((sum, u) => sum + u.reactions, 0),
+            channelsAnalyzed: 5,
+            dataRange: '30 days (enhanced sample data)'
+        }
+    });
+});
+
+app.get('/api/slack/channels', (req, res) => {
+    res.json({
+        success: true,
+        data: [
+            { id: 'C001', name: 'general', memberCount: 20, messagesCount: 567 },
+            { id: 'C002', name: 'colorado-team', memberCount: 7, messagesCount: 234 },
+            { id: 'C003', name: 'west-texas-team', memberCount: 5, messagesCount: 189 },
+            { id: 'C004', name: 'epnm-team', memberCount: 8, messagesCount: 312 },
+            { id: 'C005', name: 'announcements', memberCount: 20, messagesCount: 45 }
+        ]
+    });
+});
+
+app.get('/api/team-members', (req, res) => {
+    const summary = {
+        totalMembers: teamMembers.length,
+        activeMembers: teamMembers.filter(m => m.isActive).length,
+        regionalDistribution: {
+            Colorado: teamMembers.filter(m => m.state === 'Colorado').length,
+            'West Texas': teamMembers.filter(m => m.state === 'West Texas').length,
+            EPNM: teamMembers.filter(m => m.state === 'EPNM').length
+        },
+        performanceDistribution: {
+            excellent: teamMembers.filter(m => m.performance === 'excellent').length,
+            good: teamMembers.filter(m => m.performance === 'good').length,
+            average: teamMembers.filter(m => m.performance === 'average').length,
+            poor: teamMembers.filter(m => m.performance === 'poor').length
+        },
+        averageEngagement: Math.round(teamMembers.reduce((sum, m) => sum + m.engagementScore, 0) / teamMembers.length),
+        totalMessages: teamMembers.reduce((sum, m) => sum + m.messages, 0),
+        totalReactions: teamMembers.reduce((sum, m) => sum + m.reactions, 0)
+    };
+
+    res.json({
+        success: true,
+        data: teamMembers,
+        summary: summary,
+        lastUpdated: new Date().toISOString()
+    });
+});
+
+app.get('/api/analytics/summary', (req, res) => {
+    const period = req.query.period || '6months';
+    
+    const analytics = {
+        period: period,
+        currentMetrics: {
+            totalEngagement: Math.round(teamMembers.reduce((sum, m) => sum + m.engagementScore, 0) / teamMembers.length),
+            totalMessages: teamMembers.reduce((sum, m) => sum + m.messages, 0),
+            activeMembers: teamMembers.filter(m => m.isActive).length,
+            avgResponseTime: 2.1
+        },
+        trends: {
+            engagementGrowth: '+12.3%',
+            messageGrowth: '+8.7%',
+            memberGrowth: '+5.2%',
+            responseImprovement: '+15.4%'
+        },
+        regionalBreakdown: {
+            Colorado: {
+                members: teamMembers.filter(m => m.state === 'Colorado').length,
+                avgEngagement: Math.round(teamMembers.filter(m => m.state === 'Colorado').reduce((sum, m) => sum + m.engagementScore, 0) / teamMembers.filter(m => m.state === 'Colorado').length)
+            },
+            'West Texas': {
+                members: teamMembers.filter(m => m.state === 'West Texas').length,
+                avgEngagement: Math.round(teamMembers.filter(m => m.state === 'West Texas').reduce((sum, m) => sum + m.engagementScore, 0) / teamMembers.filter(m => m.state === 'West Texas').length)
+            },
+            'EPNM': {
+                members: teamMembers.filter(m => m.state === 'EPNM').length,
+                avgEngagement: Math.round(teamMembers.filter(m => m.state === 'EPNM').reduce((sum, m) => sum + m.engagementScore, 0) / teamMembers.filter(m => m.state === 'EPNM').length)
+            }
+        }
+    };
+
+    res.json({
+        success: true,
+        data: analytics,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Main dashboard route - SERVE THE ENHANCED HTML WITH LEADERBOARDS
+app.get('/', (req, res) => {
+    res.send(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -572,13 +841,13 @@
 
                 <div class="kpi-card warning">
                     <div class="kpi-label">Total Messages</div>
-                    <div class="kpi-value" id="totalMessages">1,780</div>
+                    <div class="kpi-value" id="totalMessages">2,680</div>
                     <div class="kpi-change positive">💬 Active communication</div>
                 </div>
 
                 <div class="kpi-card good">
                     <div class="kpi-label">Avg Response Time</div>
-                    <div class="kpi-value" id="avgResponseTime">2.2h</div>
+                    <div class="kpi-value" id="avgResponseTime">2.1h</div>
                     <div class="kpi-change positive">⏱️ Good responsiveness</div>
                 </div>
             </div>
@@ -698,35 +967,6 @@
         let currentTab = 'executive';
         let charts = {};
 
-        // Sample team data
-        const sampleTeamData = [
-            { id: 'U001', name: 'Nicole Ruybal', role: 'Primary Owner', state: 'Colorado', messages: 156, reactions: 234, comments: 67, responseTime: 1.8, engagementScore: 96, trend: 'up', performance: 'excellent' },
-            { id: 'U002', name: 'Chloe Entner', role: 'Team Member', state: 'Colorado', messages: 134, reactions: 189, comments: 45, responseTime: 2.1, engagementScore: 89, trend: 'up', performance: 'good' },
-            { id: 'U003', name: 'Crystal Foley', role: 'Team Member', state: 'Colorado', messages: 142, reactions: 198, comments: 52, responseTime: 1.9, engagementScore: 92, trend: 'up', performance: 'excellent' },
-            { id: 'U004', name: 'Jeff Goulet', role: 'Team Member', state: 'West Texas', messages: 118, reactions: 167, comments: 38, responseTime: 2.4, engagementScore: 85, trend: 'stable', performance: 'good' },
-            { id: 'U005', name: 'Hannah Jackson', role: 'Team Member', state: 'Colorado', messages: 128, reactions: 176, comments: 43, responseTime: 2.2, engagementScore: 88, trend: 'up', performance: 'good' },
-            { id: 'U006', name: 'Amy Partlow', role: 'Team Member', state: 'Colorado', messages: 139, reactions: 195, comments: 49, responseTime: 2.0, engagementScore: 91, trend: 'up', performance: 'excellent' },
-            { id: 'U007', name: 'Haley Santiago', role: 'Team Member', state: 'Colorado', messages: 125, reactions: 172, comments: 41, responseTime: 2.3, engagementScore: 87, trend: 'stable', performance: 'good' },
-            
-            { id: 'U008', name: 'Constance Montgomery', role: 'Team Member', state: 'West Texas', messages: 148, reactions: 218, comments: 58, responseTime: 1.7, engagementScore: 94, trend: 'up', performance: 'excellent' },
-            { id: 'U009', name: 'Kris Schmidt', role: 'Team Member', state: 'West Texas', messages: 137, reactions: 201, comments: 51, responseTime: 2.0, engagementScore: 90, trend: 'up', performance: 'excellent' },
-            { id: 'U010', name: 'Sandi Franklin', role: 'Team Member', state: 'West Texas', messages: 122, reactions: 178, comments: 39, responseTime: 2.5, engagementScore: 86, trend: 'stable', performance: 'good' },
-            { id: 'U011', name: 'Jonathan Barnhart', role: 'Team Member', state: 'West Texas', messages: 131, reactions: 187, comments: 44, responseTime: 2.2, engagementScore: 89, trend: 'up', performance: 'good' },
-            { id: 'U012', name: 'Christian Melendez', role: 'Team Member', state: 'West Texas', messages: 145, reactions: 212, comments: 55, responseTime: 1.8, engagementScore: 93, trend: 'up', performance: 'excellent' },
-            
-            { id: 'U013', name: 'Scott Duerfeldt', role: 'Team Member', state: 'EPNM', messages: 127, reactions: 181, comments: 42, responseTime: 2.3, engagementScore: 88, trend: 'stable', performance: 'good' },
-            { id: 'U014', name: 'Gidget Miller', role: 'Team Member', state: 'EPNM', messages: 136, reactions: 194, comments: 48, responseTime: 2.1, engagementScore: 91, trend: 'up', performance: 'excellent' },
-            { id: 'U015', name: 'Ray Woodruff', role: 'Team Member', state: 'EPNM', messages: 119, reactions: 169, comments: 37, responseTime: 2.6, engagementScore: 84, trend: 'down', performance: 'good' },
-            { id: 'U016', name: 'Aaron Hartman', role: 'Team Member', state: 'EPNM', messages: 133, reactions: 192, comments: 46, responseTime: 2.2, engagementScore: 89, trend: 'up', performance: 'good' },
-            { id: 'U017', name: 'Erica Torres', role: 'Team Member', state: 'EPNM', messages: 141, reactions: 204, comments: 54, responseTime: 1.9, engagementScore: 92, trend: 'up', performance: 'excellent' },
-            { id: 'U018', name: 'Jake Alsept', role: 'Team Member', state: 'EPNM', messages: 124, reactions: 175, comments: 40, responseTime: 2.4, engagementScore: 85, trend: 'stable', performance: 'good' },
-            { id: 'U019', name: 'Jen Hettum', role: 'Team Member', state: 'EPNM', messages: 138, reactions: 199, comments: 50, responseTime: 2.0, engagementScore: 90, trend: 'up', performance: 'excellent' },
-            { id: 'U020', name: 'Hector R Ramirez-Bruno', role: 'Team Member', state: 'EPNM', messages: 129, reactions: 184, comments: 44, responseTime: 2.3, engagementScore: 88, trend: 'stable', performance: 'good' }
-        ];
-
-        // Initialize with sample data
-        teamMembers = [...sampleTeamData];
-
         // Tab Management
         function showTab(tabName) {
             // Hide all tab contents
@@ -740,11 +980,11 @@
             });
 
             // Show selected tab content
-            document.getElementById(`tab-content-${tabName}`).classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
+            document.getElementById(\`tab-content-\${tabName}\`).classList.add('active');
+            document.getElementById(\`tab-\${tabName}\`).classList.add('active');
 
             currentTab = tabName;
-            updateStatus(`📊 Switched to ${tabName} view`);
+            updateStatus(\`📊 Switched to \${tabName} view\`);
 
             // Load regional data for non-executive tabs
             if (tabName !== 'executive') {
@@ -770,16 +1010,16 @@
                 const positionClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : 'other';
                 const scoreClass = getScoreClass(member.engagementScore);
                 
-                return `
+                return \`
                     <li class="leaderboard-item">
-                        <div class="leaderboard-position ${positionClass}">${index + 1}</div>
+                        <div class="leaderboard-position \${positionClass}">\${index + 1}</div>
                         <div class="leaderboard-member">
-                            <div class="leaderboard-name">${member.name}</div>
-                            <div class="leaderboard-state">${member.state} • ${member.role}</div>
+                            <div class="leaderboard-name">\${member.name}</div>
+                            <div class="leaderboard-state">\${member.state} • \${member.role}</div>
                         </div>
-                        <div class="leaderboard-score ${scoreClass}">${member.engagementScore}</div>
+                        <div class="leaderboard-score \${scoreClass}">\${member.engagementScore}</div>
                     </li>
-                `;
+                \`;
             }).join('');
         }
 
@@ -793,16 +1033,16 @@
                 const positionClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : 'other';
                 const scoreClass = getScoreClass(member.engagementScore);
                 
-                return `
+                return \`
                     <li class="leaderboard-item">
-                        <div class="leaderboard-position ${positionClass}">${index + 1}</div>
+                        <div class="leaderboard-position \${positionClass}">\${index + 1}</div>
                         <div class="leaderboard-member">
-                            <div class="leaderboard-name">${member.name}</div>
-                            <div class="leaderboard-state">${member.state} • ${member.messages} msgs</div>
+                            <div class="leaderboard-name">\${member.name}</div>
+                            <div class="leaderboard-state">\${member.state} • \${member.messages} msgs</div>
                         </div>
-                        <div class="leaderboard-score ${scoreClass}">${member.messages}</div>
+                        <div class="leaderboard-score \${scoreClass}">\${member.messages}</div>
                     </li>
-                `;
+                \`;
             }).join('');
         }
 
@@ -816,16 +1056,16 @@
                 const positionClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : 'other';
                 const scoreClass = getScoreClass(member.engagementScore);
                 
-                return `
+                return \`
                     <li class="leaderboard-item">
-                        <div class="leaderboard-position ${positionClass}">${index + 1}</div>
+                        <div class="leaderboard-position \${positionClass}">\${index + 1}</div>
                         <div class="leaderboard-member">
-                            <div class="leaderboard-name">${member.name}</div>
-                            <div class="leaderboard-state">${member.state} • ${member.responseTime}h avg</div>
+                            <div class="leaderboard-name">\${member.name}</div>
+                            <div class="leaderboard-state">\${member.state} • \${member.responseTime}h avg</div>
                         </div>
-                        <div class="leaderboard-score ${scoreClass}">${member.responseTime}h</div>
+                        <div class="leaderboard-score \${scoreClass}">\${member.responseTime}h</div>
                     </li>
-                `;
+                \`;
             }).join('');
         }
 
@@ -852,16 +1092,16 @@
                 const positionClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : 'other';
                 const scoreClass = getScoreClass(member.engagementScore);
                 
-                return `
+                return \`
                     <li class="leaderboard-item">
-                        <div class="leaderboard-position ${positionClass}">${member.regionIcon}</div>
+                        <div class="leaderboard-position \${positionClass}">\${member.regionIcon}</div>
                         <div class="leaderboard-member">
-                            <div class="leaderboard-name">${member.name}</div>
-                            <div class="leaderboard-state">${member.state} Champion</div>
+                            <div class="leaderboard-name">\${member.name}</div>
+                            <div class="leaderboard-state">\${member.state} Champion</div>
                         </div>
-                        <div class="leaderboard-score ${scoreClass}">${member.engagementScore}</div>
+                        <div class="leaderboard-score \${scoreClass}">\${member.engagementScore}</div>
                     </li>
-                `;
+                \`;
             }).join('');
         }
 
@@ -882,17 +1122,27 @@
         }
 
         // Data Management Functions
-        function loadRealData() {
+        async function loadRealData() {
             updateStatus('🔄 Loading real Slack data...');
             
-            // Simulate API call delay
-            setTimeout(() => {
-                updateKPIs();
-                updateTabBadges();
-                updateLeaderboards();
-                createCharts();
-                updateStatus('✅ Real data loaded successfully');
-            }, 1500);
+            try {
+                const response = await fetch('/api/team-members');
+                const result = await response.json();
+                
+                if (result.success) {
+                    teamMembers = result.data;
+                    updateKPIs();
+                    updateTabBadges();
+                    updateLeaderboards();
+                    createCharts();
+                    updateStatus('✅ Real data loaded successfully');
+                } else {
+                    throw new Error(result.error || 'Failed to load data');
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                updateStatus('❌ Failed to load data');
+            }
         }
 
         function updateKPIs() {
@@ -941,7 +1191,7 @@
 
             const stateName = regionMap[region];
             const regionMembers = teamMembers.filter(member => member.state === stateName);
-            const gridElement = document.getElementById(`${region}-grid`);
+            const gridElement = document.getElementById(\`\${region}-grid\`);
 
             if (!gridElement) return;
 
@@ -953,44 +1203,44 @@
                     
                     const trendIcon = member.trend === 'up' ? '📈' : member.trend === 'down' ? '📉' : '➡️';
                     
-                    return `
-                        <div class="member-item" style="border-left-color: ${performanceColor}">
+                    return \`
+                        <div class="member-item" style="border-left-color: \${performanceColor}">
                             <div class="member-header">
                                 <div class="member-info">
-                                    <h4>${member.name}</h4>
-                                    <p>${member.role} • ${member.state}</p>
+                                    <h4>\${member.name}</h4>
+                                    <p>\${member.role} • \${member.state}</p>
                                 </div>
-                                <span class="performance-indicator ${member.performance}">${member.performance}</span>
+                                <span class="performance-indicator \${member.performance}">\${member.performance}</span>
                             </div>
                             <div class="member-stats">
                                 <div class="stat-item">
-                                    <div class="stat-value">${member.engagementScore}</div>
+                                    <div class="stat-value">\${member.engagementScore}</div>
                                     <div class="stat-label">Score</div>
                                 </div>
                                 <div class="stat-item">
-                                    <div class="stat-value">${member.messages}</div>
+                                    <div class="stat-value">\${member.messages}</div>
                                     <div class="stat-label">Messages</div>
                                 </div>
                                 <div class="stat-item">
-                                    <div class="stat-value">${member.responseTime}h</div>
+                                    <div class="stat-value">\${member.responseTime}h</div>
                                     <div class="stat-label">Response</div>
                                 </div>
                                 <div class="stat-item">
-                                    <div class="stat-value">${trendIcon}</div>
+                                    <div class="stat-value">\${trendIcon}</div>
                                     <div class="stat-label">Trend</div>
                                 </div>
                             </div>
                         </div>
-                    `;
+                    \`;
                 }).join('');
             } else {
                 const regionIcon = getRegionIcon(stateName);
-                gridElement.innerHTML = `
+                gridElement.innerHTML = \`
                     <div class="empty-state">
-                        <div class="empty-state-icon">${regionIcon}</div>
-                        <p>No team members found in ${stateName}.</p>
+                        <div class="empty-state-icon">\${regionIcon}</div>
+                        <p>No team members found in \${stateName}.</p>
                     </div>
-                `;
+                \`;
             }
         }
 
@@ -1010,7 +1260,6 @@
 
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
             const engagementData = [78, 82, 85, 88, 91, 89];
-            const messagesData = [1200, 1350, 1480, 1620, 1750, 1780];
 
             charts.trends = new Chart(ctx, {
                 type: 'line',
@@ -1021,13 +1270,6 @@
                         data: engagementData,
                         borderColor: '#3498db',
                         backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }, {
-                        label: 'Messages (scaled)',
-                        data: messagesData.map(val => val / 20), // Scale down for visibility
-                        borderColor: '#e74c3c',
-                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
                         tension: 0.4,
                         fill: true
                     }]
@@ -1141,13 +1383,58 @@
 
         // Initialize Dashboard
         function initializeDashboard() {
-            updateKPIs();
-            updateTabBadges();
-            updateLeaderboards();
-            createCharts();
-            updateStatus('✅ Dashboard initialized with leaderboards');
+            // Load data automatically on startup
+            loadRealData();
         }
 
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeDashboard);
+        } else {
+            initializeDashboard();
+        }
     </script>
 </body>
 </html>
+    `);
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Server error:', err);
+    res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    });
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        error: 'Route not found',
+        availableRoutes: [
+            'GET /',
+            'GET /health',
+            'GET /api/slack/test',
+            'GET /api/slack/users',
+            'GET /api/slack/channels',
+            'GET /api/team-members',
+            'GET /api/analytics/summary'
+        ]
+    });
+});
+
+// Start server
+app.listen(PORT, () => {
+    console.log(`🚀 Enhanced Slack Dashboard Server running on port ${PORT}`);
+    console.log(`📊 Dashboard URL: http://localhost:${PORT}`);
+    console.log(`🔍 Health check: http://localhost:${PORT}/health`);
+    console.log(`👥 Team members loaded: ${teamMembers.length}`);
+    console.log(`✨ Features: Real-time analytics, Multi-regional support, Advanced charts, Member leaderboards`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📦 Platform: Render Cloud Deployment Ready`);
+});
+
+module.exports = app;
