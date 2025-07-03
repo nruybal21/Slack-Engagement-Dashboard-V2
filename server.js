@@ -1,4 +1,310 @@
-const express = require('express');
+// Initialize Dashboard
+        function initializeDashboard() {
+            // Load data automatically on startup
+            loadRealData();
+        }
+
+        // Team Management Functions
+        function loadManagementData() {
+            renderMemberManagementList();
+        }
+
+        function renderMemberManagementList() {
+            const container = document.getElementById('memberManagementList');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            if (teamMembers.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <p>No team members found. Add some members to get started!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            teamMembers.forEach(member => {
+                const memberCard = document.createElement('div');
+                memberCard.className = 'member-management-item';
+                memberCard.innerHTML = `
+                    <div class="member-actions">
+                        <button class="action-btn edit" onclick="editMember('${member.id}')">✏️ Edit</button>
+                        <button class="action-btn delete" onclick="deleteMember('${member.id}')">🗑️ Delete</button>
+                    </div>
+                    <div class="member-header">
+                        <div class="member-info">
+                            <h4>${member.name}</h4>
+                            <p>${member.role} • ${member.state}</p>
+                        </div>
+                        <span class="performance-indicator ${member.performance}">${member.performance}</span>
+                    </div>
+                    <div class="member-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${member.engagementScore}</div>
+                            <div class="stat-label">Engagement</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${member.messages}</div>
+                            <div class="stat-label">Messages</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${member.responseTime}h</div>
+                            <div class="stat-label">Response</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${member.isActive ? '✅' : '❌'}</div>
+                            <div class="stat-label">Status</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(memberCard);
+            });
+        }
+
+        function openAddMemberModal() {
+            document.getElementById('modalTitle').textContent = 'Add New Member';
+            document.getElementById('memberForm').reset();
+            document.getElementById('memberModal').style.display = 'flex';
+        }
+
+        function editMember(memberId) {
+            const member = teamMembers.find(m => m.id === memberId);
+            if (!member) return;
+
+            document.getElementById('modalTitle').textContent = 'Edit Member';
+            document.getElementById('memberName').value = member.name;
+            document.getElementById('memberRole').value = member.role;
+            document.getElementById('memberState').value = member.state;
+            document.getElementById('memberTimezone').value = member.timezone || 'MT';
+            document.getElementById('memberMessages').value = member.messages;
+            document.getElementById('memberReactions').value = member.reactions;
+            document.getElementById('memberComments').value = member.comments;
+            document.getElementById('memberResponseTime').value = member.responseTime;
+            document.getElementById('memberEngagement').value = member.engagementScore;
+            document.getElementById('memberTrend').value = member.trend;
+            document.getElementById('memberActive').value = member.isActive.toString();
+
+            // Store the ID for editing
+            document.getElementById('memberForm').setAttribute('data-editing', memberId);
+            document.getElementById('memberModal').style.display = 'flex';
+        }
+
+        function deleteMember(memberId) {
+            if (confirm('Are you sure you want to delete this member?')) {
+                teamMembers = teamMembers.filter(m => m.id !== memberId);
+                updateKPIs();
+                updateTabBadges();
+                updateLeaderboards();
+                loadManagementData();
+                createCharts();
+                updateStatus('🗑️ Member deleted successfully');
+            }
+        }
+
+        function closeMemberModal() {
+            document.getElementById('memberModal').style.display = 'none';
+            document.getElementById('memberForm').removeAttribute('data-editing');
+        }
+
+        function bulkEdit() {
+            document.getElementById('bulkModal').style.display = 'flex';
+        }
+
+        function closeBulkModal() {
+            document.getElementById('bulkModal').style.display = 'none';
+        }
+
+        function applyBulkEdit() {
+            const field = document.getElementById('bulkField').value;
+            const value = document.getElementById('bulkValue').value;
+            
+            if (!value) {
+                alert('Please enter a value');
+                return;
+            }
+
+            teamMembers.forEach(member => {
+                if (field === 'isActive') {
+                    member[field] = value === 'true';
+                } else {
+                    member[field] = value;
+                }
+                
+                // Recalculate performance if engagement score changed
+                if (field === 'engagementScore') {
+                    member.performance = determinePerformance(parseInt(value));
+                }
+            });
+
+            updateKPIs();
+            updateTabBadges();
+            updateLeaderboards();
+            loadManagementData();
+            createCharts();
+            closeBulkModal();
+            updateStatus('📝 Bulk edit applied successfully');
+        }
+
+        function importMembers() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv,.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            let importData;
+                            if (file.name.endsWith('.json')) {
+                                importData = JSON.parse(e.target.result);
+                            } else {
+                                // Basic CSV parsing
+                                const lines = e.target.result.split('\\n');
+                                const headers = lines[0].split(',').map(h => h.trim());
+                                importData = lines.slice(1).map(line => {
+                                    const values = line.split(',').map(v => v.trim());
+                                    const obj = {};
+                                    headers.forEach((header, index) => {
+                                        obj[header] = values[index];
+                                    });
+                                    return obj;
+                                });
+                            }
+                            
+                            // Process imported data
+                            importData.forEach(item => {
+                                const newMember = {
+                                    id: 'U' + Date.now() + Math.random().toString(36).substr(2, 9),
+                                    name: item.name || 'Unknown',
+                                    role: item.role || 'Team Member',
+                                    state: item.state || 'Colorado',
+                                    messages: parseInt(item.messages) || 0,
+                                    reactions: parseInt(item.reactions) || 0,
+                                    comments: parseInt(item.comments) || 0,
+                                    responseTime: parseFloat(item.responseTime) || 2.0,
+                                    engagementScore: parseInt(item.engagementScore) || 75,
+                                    trend: item.trend || 'stable',
+                                    isActive: item.isActive !== 'false',
+                                    timezone: item.timezone || 'MT'
+                                };
+                                newMember.performance = determinePerformance(newMember.engagementScore);
+                                teamMembers.push(newMember);
+                            });
+
+                            updateKPIs();
+                            updateTabBadges();
+                            updateLeaderboards();
+                            loadManagementData();
+                            createCharts();
+                            updateStatus(\`📁 Imported \${importData.length} members successfully\`);
+                        } catch (error) {
+                            alert('Error importing file: ' + error.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        function filterMembers() {
+            const searchTerm = document.getElementById('memberSearch').value.toLowerCase();
+            const stateFilter = document.getElementById('stateFilter').value;
+            const performanceFilter = document.getElementById('performanceFilter').value;
+            
+            const filteredMembers = teamMembers.filter(member => {
+                const matchesSearch = member.name.toLowerCase().includes(searchTerm) ||
+                                    member.role.toLowerCase().includes(searchTerm);
+                const matchesState = !stateFilter || member.state === stateFilter;
+                const matchesPerformance = !performanceFilter || member.performance === performanceFilter;
+                
+                return matchesSearch && matchesState && matchesPerformance;
+            });
+
+            renderFilteredMembers(filteredMembers);
+        }
+
+        function renderFilteredMembers(filteredMembers) {
+            const container = document.getElementById('memberManagementList');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            filteredMembers.forEach(member => {
+                const memberCard = document.createElement('div');
+                memberCard.className = 'member-management-item';
+                memberCard.innerHTML = `
+                    <div class="member-actions">
+                        <button class="action-btn edit" onclick="editMember('${member.id}')">✏️ Edit</button>
+                        <button class="action-btn delete" onclick="deleteMember('${member.id}')">🗑️ Delete</button>
+                    </div>
+                    <div class="member-header">
+                        <div class="member-info">
+                            <h4>${member.name}</h4>
+                            <p>${member.role} • ${member.state}</p>
+                        </div>
+                        <span class="performance-indicator ${member.performance}">${member.performance}</span>
+                    </div>
+                    <div class="member-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${member.engagementScore}</div>
+                            <div class="stat-label">Engagement</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${member.messages}</div>
+                            <div class="stat-label">Messages</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${member.responseTime}h</div>
+                            <div class="stat-label">Response</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${member.isActive ? '✅' : '❌'}</div>
+                            <div class="stat-label">Status</div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(memberCard);
+            });
+        }
+
+        function sortMembers() {
+            const sortBy = document.getElementById('sortBy').value;
+            teamMembers.sort((a, b) => {
+                if (sortBy === 'name') {
+                    return a.name.localeCompare(b.name);
+                } else if (sortBy === 'engagementScore' || sortBy === 'messages') {
+                    return b[sortBy] - a[sortBy];
+                } else if (sortBy === 'responseTime') {
+                    return a[sortBy] - b[sortBy];
+                } else if (sortBy === 'state') {
+                    return a.state.localeCompare(b.state);
+                }
+                return 0;
+            });
+            loadManagementData();
+        }
+
+        function determinePerformance(score) {
+            if (score >= 90) return 'excellent';
+            if (score >= 80) return 'good';
+            if (score >= 70) return 'average';
+            return 'poor';
+        }
+
+        // Handle form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('memberForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const editingId = this.getAttribute('data-editing');
+                const formData = {
+                    name: document.getElementById('memberName').value,
+                    role: document.getElementById('memberRole').value,
+                    state: document.const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
@@ -756,6 +1062,210 @@ app.get('/', (req, res) => {
             margin-bottom: 20px;
         }
 
+        /* Management Tab Styles */
+        .management-controls {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .management-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .management-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .member-management-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .member-management-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .search-filters {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-filters input, .search-filters select, .sort-options select {
+            padding: 8px 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .search-filters input:focus, .search-filters select:focus, .sort-options select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .member-management-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .member-management-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .member-management-item:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .member-management-item .member-actions {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn.edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .action-btn.delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        .close-btn:hover {
+            color: #e74c3c;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ecf0f1;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -818,6 +1328,10 @@ app.get('/', (req, res) => {
             <button class="tab-button" onclick="showTab('epnm')" id="tab-epnm">
                 🌵 EPNM
                 <span class="tab-badge" id="badge-epnm">8</span>
+            </button>
+            <button class="tab-button" onclick="showTab('management')" id="tab-management">
+                ⚙️ Manage Team
+                <span class="tab-badge" id="badge-management">Edit</span>
             </button>
         </div>
 
@@ -948,6 +1462,67 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
+        <!-- Team Management Tab -->
+        <div id="tab-content-management" class="tab-content">
+            <h2 style="color: #2c3e50; margin-bottom: 25px;">⚙️ Team Management</h2>
+            
+            <!-- Management Controls -->
+            <div class="management-controls">
+                <div class="management-header">
+                    <div>
+                        <h3 style="margin: 0 0 5px 0; color: #2c3e50;">Team Member Management</h3>
+                        <p style="margin: 0; color: #7f8c8d;">Add, edit, or remove team members from your Slack dashboard</p>
+                    </div>
+                    <div class="management-buttons">
+                        <button class="btn primary" onclick="openAddMemberModal()">
+                            ➕ Add New Member
+                        </button>
+                        <button class="btn secondary" onclick="bulkEdit()">
+                            📝 Bulk Edit
+                        </button>
+                        <button class="btn secondary" onclick="importMembers()">
+                            📁 Import CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Members List -->
+            <div class="member-management-section">
+                <div class="member-management-header">
+                    <div class="search-filters">
+                        <input type="text" id="memberSearch" placeholder="🔍 Search members..." oninput="filterMembers()">
+                        <select id="stateFilter" onchange="filterMembers()">
+                            <option value="">All States</option>
+                            <option value="Colorado">Colorado</option>
+                            <option value="West Texas">West Texas</option>
+                            <option value="EPNM">EPNM</option>
+                        </select>
+                        <select id="performanceFilter" onchange="filterMembers()">
+                            <option value="">All Performance</option>
+                            <option value="excellent">Excellent</option>
+                            <option value="good">Good</option>
+                            <option value="average">Average</option>
+                            <option value="poor">Poor</option>
+                        </select>
+                    </div>
+                    <div class="sort-options">
+                        <select id="sortBy" onchange="sortMembers()">
+                            <option value="name">Sort by Name</option>
+                            <option value="engagementScore">Sort by Engagement</option>
+                            <option value="messages">Sort by Messages</option>
+                            <option value="responseTime">Sort by Response Time</option>
+                            <option value="state">Sort by State</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="member-management-list" id="memberManagementList">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
         <!-- Controls -->
         <div class="controls">
             <button class="btn primary" onclick="loadRealData()">🔄 Load Real Data</button>
@@ -958,6 +1533,134 @@ app.get('/', (req, res) => {
         <!-- Status Bar -->
         <div class="status-bar" id="statusBar">
             Ready to load team data
+        </div>
+
+        <!-- Member Edit Modal -->
+        <div id="memberModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Add New Member</h3>
+                    <button class="close-btn" onclick="closeMemberModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="memberForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="memberName">Name *</label>
+                                <input type="text" id="memberName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="memberRole">Role *</label>
+                                <select id="memberRole" required>
+                                    <option value="">Select Role</option>
+                                    <option value="Primary Owner">Primary Owner</option>
+                                    <option value="Team Member">Team Member</option>
+                                    <option value="Manager">Manager</option>
+                                    <option value="Supervisor">Supervisor</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="memberState">State/Region *</label>
+                                <select id="memberState" required>
+                                    <option value="">Select State</option>
+                                    <option value="Colorado">Colorado</option>
+                                    <option value="West Texas">West Texas</option>
+                                    <option value="EPNM">EPNM</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="memberTimezone">Timezone</label>
+                                <select id="memberTimezone">
+                                    <option value="MT">Mountain Time (MT)</option>
+                                    <option value="CT">Central Time (CT)</option>
+                                    <option value="PT">Pacific Time (PT)</option>
+                                    <option value="ET">Eastern Time (ET)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="memberMessages">Messages</label>
+                                <input type="number" id="memberMessages" min="0" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="memberReactions">Reactions</label>
+                                <input type="number" id="memberReactions" min="0" placeholder="0">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="memberComments">Comments</label>
+                                <input type="number" id="memberComments" min="0" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="memberResponseTime">Response Time (hours)</label>
+                                <input type="number" id="memberResponseTime" min="0" step="0.1" placeholder="2.0">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="memberEngagement">Engagement Score</label>
+                                <input type="number" id="memberEngagement" min="0" max="100" placeholder="85">
+                            </div>
+                            <div class="form-group">
+                                <label for="memberTrend">Trend</label>
+                                <select id="memberTrend">
+                                    <option value="stable">Stable</option>
+                                    <option value="up">Up</option>
+                                    <option value="down">Down</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="memberActive">Status</label>
+                                <select id="memberActive">
+                                    <option value="true">Active</option>
+                                    <option value="false">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn secondary" onclick="closeMemberModal()">Cancel</button>
+                            <button type="submit" class="btn primary">Save Member</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Edit Modal -->
+        <div id="bulkModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Bulk Edit Members</h3>
+                    <button class="close-btn" onclick="closeBulkModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Select the field you want to update for all selected members:</p>
+                    <div class="form-group">
+                        <label for="bulkField">Field to Update</label>
+                        <select id="bulkField">
+                            <option value="state">State/Region</option>
+                            <option value="role">Role</option>
+                            <option value="timezone">Timezone</option>
+                            <option value="trend">Trend</option>
+                            <option value="isActive">Status</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bulkValue">New Value</label>
+                        <input type="text" id="bulkValue" placeholder="Enter new value">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn secondary" onclick="closeBulkModal()">Cancel</button>
+                        <button type="button" class="btn primary" onclick="applyBulkEdit()">Apply Changes</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -989,6 +1692,11 @@ app.get('/', (req, res) => {
             // Load regional data for non-executive tabs
             if (tabName !== 'executive') {
                 loadRegionalData(tabName);
+            }
+            
+            // Load management data for management tab
+            if (tabName === 'management') {
+                loadManagementData();
             }
         }
 
