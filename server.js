@@ -164,11 +164,11 @@
                                 // Basic CSV parsing
                                 const lines = e.target.result.split('\\n');
                                 const headers = lines[0].split(',').map(h => h.trim());
-                                importData = lines.slice(1).map(line => {
+                                importData = lines.slice(1).filter(line => line.trim()).map(line => {
                                     const values = line.split(',').map(v => v.trim());
                                     const obj = {};
                                     headers.forEach((header, index) => {
-                                        obj[header] = values[index];
+                                        obj[header] = values[index] || '';
                                     });
                                     return obj;
                                 });
@@ -199,7 +199,7 @@
                             updateLeaderboards();
                             loadManagementData();
                             createCharts();
-                            updateStatus(\`📁 Imported \${importData.length} members successfully\`);
+                            updateStatus('📁 Imported ' + importData.length + ' members successfully');
                         } catch (error) {
                             alert('Error importing file: ' + error.message);
                         }
@@ -1683,11 +1683,11 @@ app.get('/', (req, res) => {
             });
 
             // Show selected tab content
-            document.getElementById(\`tab-content-\${tabName}\`).classList.add('active');
-            document.getElementById(\`tab-\${tabName}\`).classList.add('active');
+            document.getElementById('tab-content-' + tabName).classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
 
             currentTab = tabName;
-            updateStatus(\`📊 Switched to \${tabName} view\`);
+            updateStatus('📊 Switched to ' + tabName + ' view');
 
             // Load regional data for non-executive tabs
             if (tabName !== 'executive') {
@@ -1718,16 +1718,14 @@ app.get('/', (req, res) => {
                 const positionClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : 'other';
                 const scoreClass = getScoreClass(member.engagementScore);
                 
-                return \`
-                    <li class="leaderboard-item">
-                        <div class="leaderboard-position \${positionClass}">\${index + 1}</div>
-                        <div class="leaderboard-member">
-                            <div class="leaderboard-name">\${member.name}</div>
-                            <div class="leaderboard-state">\${member.state} • \${member.role}</div>
-                        </div>
-                        <div class="leaderboard-score \${scoreClass}">\${member.engagementScore}</div>
-                    </li>
-                \`;
+                return '<li class="leaderboard-item">' +
+                    '<div class="leaderboard-position ' + positionClass + '">' + (index + 1) + '</div>' +
+                    '<div class="leaderboard-member">' +
+                        '<div class="leaderboard-name">' + member.name + '</div>' +
+                        '<div class="leaderboard-state">' + member.state + ' • ' + member.role + '</div>' +
+                    '</div>' +
+                    '<div class="leaderboard-score ' + scoreClass + '">' + member.engagementScore + '</div>' +
+                '</li>';
             }).join('');
         }
 
@@ -1741,16 +1739,14 @@ app.get('/', (req, res) => {
                 const positionClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : 'other';
                 const scoreClass = getScoreClass(member.engagementScore);
                 
-                return \`
-                    <li class="leaderboard-item">
-                        <div class="leaderboard-position \${positionClass}">\${index + 1}</div>
-                        <div class="leaderboard-member">
-                            <div class="leaderboard-name">\${member.name}</div>
-                            <div class="leaderboard-state">\${member.state} • \${member.messages} msgs</div>
-                        </div>
-                        <div class="leaderboard-score \${scoreClass}">\${member.messages}</div>
-                    </li>
-                \`;
+                return '<li class="leaderboard-item">' +
+                    '<div class="leaderboard-position ' + positionClass + '">' + (index + 1) + '</div>' +
+                    '<div class="leaderboard-member">' +
+                        '<div class="leaderboard-name">' + member.name + '</div>' +
+                        '<div class="leaderboard-state">' + member.state + ' • ' + member.messages + ' msgs</div>' +
+                    '</div>' +
+                    '<div class="leaderboard-score ' + scoreClass + '">' + member.messages + '</div>' +
+                '</li>';
             }).join('');
         }
 
@@ -1764,16 +1760,14 @@ app.get('/', (req, res) => {
                 const positionClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : 'other';
                 const scoreClass = getScoreClass(member.engagementScore);
                 
-                return \`
-                    <li class="leaderboard-item">
-                        <div class="leaderboard-position \${positionClass}">\${index + 1}</div>
-                        <div class="leaderboard-member">
-                            <div class="leaderboard-name">\${member.name}</div>
-                            <div class="leaderboard-state">\${member.state} • \${member.responseTime}h avg</div>
-                        </div>
-                        <div class="leaderboard-score \${scoreClass}">\${member.responseTime}h</div>
-                    </li>
-                \`;
+                return '<li class="leaderboard-item">' +
+                    '<div class="leaderboard-position ' + positionClass + '">' + (index + 1) + '</div>' +
+                    '<div class="leaderboard-member">' +
+                        '<div class="leaderboard-name">' + member.name + '</div>' +
+                        '<div class="leaderboard-state">' + member.state + ' • ' + member.responseTime + 'h avg</div>' +
+                    '</div>' +
+                    '<div class="leaderboard-score ' + scoreClass + '">' + member.responseTime + 'h</div>' +
+                '</li>';
             }).join('');
         }
 
@@ -1800,16 +1794,14 @@ app.get('/', (req, res) => {
                 const positionClass = index === 0 ? 'first' : index === 1 ? 'second' : index === 2 ? 'third' : 'other';
                 const scoreClass = getScoreClass(member.engagementScore);
                 
-                return \`
-                    <li class="leaderboard-item">
-                        <div class="leaderboard-position \${positionClass}">\${member.regionIcon}</div>
-                        <div class="leaderboard-member">
-                            <div class="leaderboard-name">\${member.name}</div>
-                            <div class="leaderboard-state">\${member.state} Champion</div>
-                        </div>
-                        <div class="leaderboard-score \${scoreClass}">\${member.engagementScore}</div>
-                    </li>
-                \`;
+                return '<li class="leaderboard-item">' +
+                    '<div class="leaderboard-position ' + positionClass + '">' + member.regionIcon + '</div>' +
+                    '<div class="leaderboard-member">' +
+                        '<div class="leaderboard-name">' + member.name + '</div>' +
+                        '<div class="leaderboard-state">' + member.state + ' Champion</div>' +
+                    '</div>' +
+                    '<div class="leaderboard-score ' + scoreClass + '">' + member.engagementScore + '</div>' +
+                '</li>';
             }).join('');
         }
 
@@ -1899,7 +1891,7 @@ app.get('/', (req, res) => {
 
             const stateName = regionMap[region];
             const regionMembers = teamMembers.filter(member => member.state === stateName);
-            const gridElement = document.getElementById(\`\${region}-grid\`);
+            const gridElement = document.getElementById(region + '-grid');
 
             if (!gridElement) return;
 
@@ -1911,44 +1903,40 @@ app.get('/', (req, res) => {
                     
                     const trendIcon = member.trend === 'up' ? '📈' : member.trend === 'down' ? '📉' : '➡️';
                     
-                    return \`
-                        <div class="member-item" style="border-left-color: \${performanceColor}">
-                            <div class="member-header">
-                                <div class="member-info">
-                                    <h4>\${member.name}</h4>
-                                    <p>\${member.role} • \${member.state}</p>
-                                </div>
-                                <span class="performance-indicator \${member.performance}">\${member.performance}</span>
-                            </div>
-                            <div class="member-stats">
-                                <div class="stat-item">
-                                    <div class="stat-value">\${member.engagementScore}</div>
-                                    <div class="stat-label">Score</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-value">\${member.messages}</div>
-                                    <div class="stat-label">Messages</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-value">\${member.responseTime}h</div>
-                                    <div class="stat-label">Response</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-value">\${trendIcon}</div>
-                                    <div class="stat-label">Trend</div>
-                                </div>
-                            </div>
-                        </div>
-                    \`;
+                    return '<div class="member-item" style="border-left-color: ' + performanceColor + '">' +
+                        '<div class="member-header">' +
+                            '<div class="member-info">' +
+                                '<h4>' + member.name + '</h4>' +
+                                '<p>' + member.role + ' • ' + member.state + '</p>' +
+                            '</div>' +
+                            '<span class="performance-indicator ' + member.performance + '">' + member.performance + '</span>' +
+                        '</div>' +
+                        '<div class="member-stats">' +
+                            '<div class="stat-item">' +
+                                '<div class="stat-value">' + member.engagementScore + '</div>' +
+                                '<div class="stat-label">Score</div>' +
+                            '</div>' +
+                            '<div class="stat-item">' +
+                                '<div class="stat-value">' + member.messages + '</div>' +
+                                '<div class="stat-label">Messages</div>' +
+                            '</div>' +
+                            '<div class="stat-item">' +
+                                '<div class="stat-value">' + member.responseTime + 'h</div>' +
+                                '<div class="stat-label">Response</div>' +
+                            '</div>' +
+                            '<div class="stat-item">' +
+                                '<div class="stat-value">' + trendIcon + '</div>' +
+                                '<div class="stat-label">Trend</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
                 }).join('');
             } else {
                 const regionIcon = getRegionIcon(stateName);
-                gridElement.innerHTML = \`
-                    <div class="empty-state">
-                        <div class="empty-state-icon">\${regionIcon}</div>
-                        <p>No team members found in \${stateName}.</p>
-                    </div>
-                \`;
+                gridElement.innerHTML = '<div class="empty-state">' +
+                    '<div class="empty-state-icon">' + regionIcon + '</div>' +
+                    '<p>No team members found in ' + stateName + '.</p>' +
+                '</div>';
             }
         }
 
