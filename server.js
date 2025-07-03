@@ -1,4 +1,739 @@
-// server.js - Complete Enhanced Slack Dashboard for Render
+// Global Variables
+        let teamMembers = [];
+        let currentTab = 'executive';
+        let charts = {};
+        let isConnected = false;
+        let editingMemberId = null;
+        let selectedMonth = new Date().getMonth(); // Current month index (0-11)
+        let selectedYear = new Date().getFullYear();
+
+        // Weekly engagement data structure
+        let weeklyEngagementData = {
+            2024: {
+                0: { // January
+                    weeks: [
+                        { week: 'Week 1', engagement: 78, messages: 145, activeMembers: 18 },
+                        { week: 'Week 2', engagement: 82, messages: 168, activeMembers: 19 },
+                        { week: 'Week 3', engagement: 85, messages: 172, activeMembers: 19 },
+                        { week: 'Week 4', engagement: 88, messages: 180, activeMembers: 20 }
+                    ],
+                    monthlyAvg: 83.25
+                },
+                1: { // February
+                    weeks: [
+                        { week: 'Week 1', engagement: 84, messages: 155, activeMembers: 18 },
+                        { week: 'Week 2', engagement: 86, messages: 175, activeMembers: 19 },
+                        { week: 'Week 3', engagement: 88, messages: 182, activeMembers: 20 },
+                        { week: 'Week 4', engagement: 90, messages: 190, activeMembers: 20 }
+                    ],
+                    monthlyAvg: 87
+                },
+                2: { // March
+                    weeks: [
+                        { week: 'Week 1', engagement: 87, messages: 165, activeMembers: 19 },
+                        { week: 'Week 2', engagement: 89, messages: 185, activeMembers: 20 },
+                        { week: 'Week 3', engagement: 91, messages: 195, activeMembers: 20 },
+                        { week: 'Week 4', engagement: 93, messages: 205, activeMembers: 21 }
+                    ],
+                    monthlyAvg: 90
+                },
+                3: { // April
+                    weeks: [
+                        { week: 'Week 1', engagement: 89, messages: 170, activeMembers: 19 },
+                        { week: 'Week 2', engagement: 91, messages: 190, activeMembers: 20 },
+                        { week: 'Week 3', engagement: 93, messages: 200, activeMembers: 20 },
+                        { week: 'Week 4', engagement: 95, messages: 210, activeMembers: 21 }
+                    ],
+                    monthlyAvg: 92
+                },
+                4: { // May
+                    weeks: [
+                        { week: 'Week 1', engagement: 91, messages: 175, activeMembers: 20 },
+                        { week: 'Week 2', engagement: 93, messages: 195, activeMembers: 20 },
+                        { week: 'Week 3', engagement: 95, messages: 205, activeMembers: 21 },
+                        { week: 'Week 4', engagement: 97, messages: 215, activeMembers: 21 }
+                    ],
+                    monthlyAvg: 94
+                },
+                5: { // June (Current)
+                    weeks: [
+                        { week: 'Week 1', engagement: 93, messages: 180, activeMembers: 20 },
+                        { week: 'Week 2', engagement: 95, messages: 200, activeMembers: 21 },
+                        { week: 'Week 3', engagement: 97, messages: 210, activeMembers: 21 },
+                        { week: 'Week 4', engagement: 99, messages: 220, activeMembers: 22 }
+                    ],
+                    monthlyAvg: 96
+                }
+            }
+        };
+
+        // Month names for display
+        const monthNames = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        // Utility Functions
+        function updateStatus(message) {
+            const statusElement = document.getElementById('statusMessage');
+            if (statusElement) {
+                statusElement.textContent = message;
+                statusElement.style.display = 'block';
+            }
+            console.log('Status:', message);
+        }
+
+        function updateConnectionStatus(status, message) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (statusElement) {
+                statusElement.className = \`connection-status \${status}\`;
+                const icons = {
+                    connected: '✅',
+                    loading: '🔄',
+                    error: '❌'
+                };
+                statusElement.innerHTML = \`\${icons[status] || '🔌'} \${message}\`;
+                isConnected = status === 'connected';
+            }
+        }
+
+        // Performance calculation utility
+        function determinePerformance(score) {
+            if (score >= 90) return 'excellent';
+            if (score >= 80) return 'good';
+            if (score >= 70) return 'warning';
+            return 'poor';
+        }
+
+        // Team Management Functions
+        function updateEngagementDisplay(value) {
+            document.getElementById('engagementDisplay').textContent = value;
+        }
+
+        function updateEditEngagementDisplay(value) {
+            document.getElementById('editEngagementDisplay').textContent = value;
+        }
+
+        function addNewMember() {
+            const name = document.getElementById('newMemberName').value.trim();
+            const state = document.getElementById('newMemberState').value;
+            
+            if (!name || !state) {
+                alert('Please fill in the required fields (Name and Region)');
+                return;
+            }
+
+            // Generate new ID
+            const maxId = Math.max(...teamMembers.map(m => parseInt(m.id.substring(1)) || 0), 0);
+            const newId = \`U\${String(maxId + 1).padStart(3, '0')}\`;
+
+            // Gather form data
+            const engagementScore = parseInt(document.getElementById('newMemberEngagement').value) || 85;
+            const newMember = {
+                id: newId,
+                name: name,
+                role: document.getElementById('newMemberRole').value,
+                state: state,
+                messages: parseInt(document.getElementById('newMemberMessages').value) || 85,
+                reactions: Math.floor(Math.random() * 50) + 100,
+                comments: Math.floor(Math.random() * 20) + 30,
+                responseTime: (Math.random() * 2 + 1).toFixed(1),
+                engagementScore: engagementScore,
+                trend: document.getElementById('newMemberTrend').value,
+                performance: determinePerformance(engagementScore),
+                lastActive: new Date().toISOString(),
+                timezone: state === 'West Texas' ? 'CT' : 'MT',
+                isActive: true
+            };
+
+            // Add to team
+            teamMembers.push(newMember);
+            
+            // Clear form and refresh displays
+            clearAddForm();
+            updateAllDisplays();
+            
+            updateStatus(\`✅ Added new team member: \${newMember.name} to \${newMember.state}\`);
+        }
+
+        function clearAddForm() {
+            document.getElementById('newMemberName').value = '';
+            document.getElementById('newMemberRole').value = 'Team Member';
+            document.getElementById('newMemberState').value = '';
+            document.getElementById('newMemberMessages').value = '85';
+            document.getElementById('newMemberEngagement').value = '85';
+            document.getElementById('newMemberTrend').value = 'up';
+            updateEngagementDisplay('85');
+        }
+
+        function editMember(memberId) {
+            const member = teamMembers.find(m => m.id === memberId);
+            if (!member) return;
+
+            editingMemberId = memberId;
+            
+            // Populate edit form
+            document.getElementById('editMemberName').value = member.name;
+            document.getElementById('editMemberRole').value = member.role;
+            document.getElementById('editMemberState').value = member.state;
+            document.getElementById('editMemberMessages').value = member.messages;
+            document.getElementById('editMemberEngagement').value = member.engagementScore;
+            document.getElementById('editMemberTrend').value = member.trend;
+            updateEditEngagementDisplay(member.engagementScore);
+            
+            // Show modal
+            document.getElementById('editMemberModal').classList.add('active');
+        }
+
+        function saveEditedMember() {
+            if (!editingMemberId) return;
+
+            const memberIndex = teamMembers.findIndex(m => m.id === editingMemberId);
+            if (memberIndex === -1) return;
+
+            const name = document.getElementById('editMemberName').value.trim();
+            const state = document.getElementById('editMemberState').value;
+            
+            if (!name || !state) {
+                alert('Please fill in the required fields (Name and Region)');
+                return;
+            }
+
+            const engagementScore = parseInt(document.getElementById('editMemberEngagement').value) || 85;
+            
+            // Update member data
+            teamMembers[memberIndex] = {
+                ...teamMembers[memberIndex],
+                name: name,
+                role: document.getElementById('editMemberRole').value,
+                state: state,
+                messages: parseInt(document.getElementById('editMemberMessages').value) || 85,
+                engagementScore: engagementScore,
+                trend: document.getElementById('editMemberTrend').value,
+                performance: determinePerformance(engagementScore),
+                lastActive: new Date().toISOString()
+            };
+
+            // Close modal and refresh
+            closeEditModal();
+            updateAllDisplays();
+            
+            updateStatus(\`✅ Updated team member: \${name}\`);
+        }
+
+        function deleteMember(memberId) {
+            const member = teamMembers.find(m => m.id === memberId);
+            if (!member) return;
+
+            if (confirm(\`Are you sure you want to remove \${member.name} from the team?\`)) {
+                teamMembers = teamMembers.filter(m => m.id !== memberId);
+                updateAllDisplays();
+                updateStatus(\`✅ Removed team member: \${member.name}\`);
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editMemberModal').classList.remove('active');
+            editingMemberId = null;
+        }
+
+        function bulkUpdateMoM() {
+            if (teamMembers.length === 0) {
+                updateStatus('⚠️ No team members to update. Load data first.');
+                return;
+            }
+
+            // Simulate bulk month-over-month updates
+            teamMembers.forEach(member => {
+                const momChange = (Math.random() - 0.3) * 15; // Bias toward positive growth
+                member.engagementScore = Math.max(0, Math.min(100, member.engagementScore + momChange));
+                member.performance = determinePerformance(member.engagementScore);
+                
+                // Update trend based on change
+                if (momChange > 5) member.trend = 'up';
+                else if (momChange < -5) member.trend = 'down';
+                else member.trend = 'stable';
+                
+                member.lastActive = new Date().toISOString();
+            });
+
+            updateAllDisplays();
+            updateStatus('📊 Bulk month-over-month data updated for all team members');
+        }
+
+        function exportTeamData() {
+            try {
+                const teamData = {
+                    members: teamMembers,
+                    summary: {
+                        totalMembers: teamMembers.length,
+                        averageEngagement: teamMembers.length > 0 ? 
+                            Math.round(teamMembers.reduce((sum, m) => sum + m.engagementScore, 0) / teamMembers.length) : 0,
+                        stateDistribution: {
+                            Colorado: teamMembers.filter(m => m.state === 'Colorado').length,
+                            'West Texas': teamMembers.filter(m => m.state === 'West Texas').length,
+                            'EPNM': teamMembers.filter(m => m.state === 'EPNM').length
+                        },
+                        performanceDistribution: {
+                            excellent: teamMembers.filter(m => m.performance === 'excellent').length,
+                            good: teamMembers.filter(m => m.performance === 'good').length,
+                            warning: teamMembers.filter(m => m.performance === 'warning').length,
+                            poor: teamMembers.filter(m => m.performance === 'poor').length
+                        }
+                    },
+                    exportDate: new Date().toISOString()
+                };
+
+                const dataStr = JSON.stringify(teamData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = \`team-export-\${new Date().toISOString().split('T')[0]}.json\`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                updateStatus('📋 Team data exported with performance analytics');
+            } catch (error) {
+                console.error('Export failed:', error);
+                updateStatus('❌ Team export failed');
+            }
+        }
+
+        function renderMemberManagementList() {
+            const container = document.getElementById('memberManagementList');
+            
+            if (!container) return;
+            
+            container.innerHTML = '';
+
+            if (teamMembers.length === 0) {
+                container.innerHTML = \`
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👥</div>
+                        <p>No team members loaded. Click "Load Live Data" to get started.</p>
+                    </div>
+                \`;
+                return;
+            }
+
+            teamMembers.forEach(member => {
+                const performanceColor = member.performance === 'excellent' ? '#27ae60' : 
+                                       member.performance === 'good' ? '#3498db' : 
+                                       member.performance === 'warning' ? '#f39c12' : '#e74c3c';
+
+                const card = document.createElement('div');
+                card.className = \`member-management-item \${member.performance}\`;
+                card.style.borderLeftColor = performanceColor;
+                
+                card.innerHTML = \`
+                    <div class="member-management-header">
+                        <div class="member-management-info">
+                            <h4>\${member.name}</h4>
+                            <p>\${member.role} • \${member.state}</p>
+                        </div>
+                        <div class="member-management-actions">
+                            <button class="btn-small btn-edit" onclick="editMember('\${member.id}')">✏️ Edit</button>
+                            <button class="btn-small btn-delete" onclick="deleteMember('\${member.id}')">🗑️ Delete</button>
+                        </div>
+                    </div>
+                    
+                    <div class="member-management-stats">
+                        <div class="management-stat-item">
+                            <div class="management-stat-value">\${member.engagementScore}</div>
+                            <div class="management-stat-label">Score</div>
+                        </div>
+                        <div class="management-stat-item">
+                            <div class="management-stat-value">\${member.messages}</div>
+                            <div class="management-stat-label">Messages</div>
+                        </div>
+                        <div class="management-stat-item">
+                            <div class="management-stat-value">\${member.responseTime}h</div>
+                            <div class="management-stat-label">Response</div>
+                        </div>
+                        <div class="management-stat-item">
+                            <div class="management-stat-value">\${member.trend === 'up' ? '📈' : member.trend === 'down' ? '📉' : '➡️'}</div>
+                            <div class="management-stat-label">Trend</div>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 15px;">
+                        <span class="performance-indicator \${member.performance}">
+                            \${member.performance} performance
+                        </span>
+                        <span style="margin-left: 10px; font-size: 0.8rem; color: #7f8c8d;">
+                            Last active: \${new Date(member.lastActive).toLocaleString()}
+                        </span>
+                    </div>
+                \`;
+                
+                container.appendChild(card);
+            });
+        }
+
+        function updateTeamOverview() {
+            const totalMembers = teamMembers.length;
+            const avgEngagement = totalMembers > 0 ? 
+                Math.round(teamMembers.reduce((sum, member) => sum + member.engagementScore, 0) / totalMembers) : 0;
+            const topPerformers = teamMembers.filter(member => member.engagementScore >= 90).length;
+            
+            document.getElementById('totalMembersCount').textContent = totalMembers;
+            document.getElementById('avgEngagementScore').textContent = avgEngagement;
+            document.getElementById('topPerformersCount').textContent = topPerformers;
+            document.getElementById('teamSizeIndicator').textContent = \`\${totalMembers} Members\`;
+        }
+
+        // Weekly engagement functions
+        function setSelectedMonth(monthIndex) {
+            selectedMonth = monthIndex;
+            
+            // Update button states
+            for (let i = 0; i <= 5; i++) {
+                const btn = document.getElementById(`month-btn-${i}`);
+                if (btn) {
+                    btn.className = i === monthIndex ? 'btn' : 'btn secondary';
+                }
+            }
+            
+            // Update weekly charts and data
+            updateWeeklyCharts();
+            updateWeeklyKPIs();
+            
+            updateStatus(`📊 Viewing weekly data for ${monthNames[monthIndex]} ${selectedYear}`);
+        }
+
+        function updateWeeklyCharts() {
+            const monthData = weeklyEngagementData[selectedYear][selectedMonth];
+            if (!monthData) return;
+            
+            const monthName = monthNames[selectedMonth];
+            
+            // Update chart titles
+            document.getElementById('weeklyEngagementTitle').textContent = `📈 Weekly Engagement - ${monthName} ${selectedYear}`;
+            document.getElementById('weeklyMessagesTitle').textContent = `💬 Weekly Messages - ${monthName} ${selectedYear}`;
+            document.getElementById('weeklyMembersTitle').textContent = `👥 Weekly Active Members - ${monthName} ${selectedYear}`;
+            document.getElementById('weeklyTrendsTitle').textContent = `📊 Weekly vs Monthly Average - ${monthName} ${selectedYear}`;
+            
+            createWeeklyEngagementChart();
+            createWeeklyMessagesChart();
+            createWeeklyMembersChart();
+            createWeeklyTrendsChart();
+        }
+
+        function updateWeeklyKPIs() {
+            const monthData = weeklyEngagementData[selectedYear][selectedMonth];
+            if (!monthData) return;
+            
+            const weeks = monthData.weeks;
+            const currentWeek = weeks[weeks.length - 1];
+            const previousWeek = weeks[weeks.length - 2];
+            const firstWeek = weeks[0];
+            
+            // Calculate metrics
+            const weekOverWeekGrowth = previousWeek ? 
+                ((currentWeek.engagement - previousWeek.engagement) / previousWeek.engagement * 100).toFixed(1) : 0;
+            const monthGrowth = ((currentWeek.engagement - firstWeek.engagement) / firstWeek.engagement * 100).toFixed(1);
+            const bestWeek = weeks.reduce((best, week) => week.engagement > best.engagement ? week : best, weeks[0]);
+            
+            // Update KPI displays
+            document.getElementById('currentWeekScore').textContent = currentWeek.engagement;
+            document.getElementById('monthlyProgress').textContent = Math.round(monthData.monthlyAvg) + '%';
+            document.getElementById('weekOverWeekGrowth').textContent = (weekOverWeekGrowth >= 0 ? '+' : '') + weekOverWeekGrowth + '%';
+            document.getElementById('bestWeekScore').textContent = bestWeek.engagement;
+        }
+
+        function createWeeklyEngagementChart() {
+            const ctx = document.getElementById('weeklyEngagementChart');
+            if (!ctx) return;
+
+            if (charts.weeklyEngagement) {
+                charts.weeklyEngagement.destroy();
+            }
+
+            const monthData = weeklyEngagementData[selectedYear][selectedMonth];
+            if (!monthData) return;
+
+            charts.weeklyEngagement = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthData.weeks.map(w => w.week),
+                    datasets: [{
+                        label: 'Weekly Engagement',
+                        data: monthData.weeks.map(w => w.engagement),
+                        borderColor: '#9b59b6',
+                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                        borderWidth: 4,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#9b59b6',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 3,
+                        pointRadius: 8,
+                        pointHoverRadius: 10
+                    }, {
+                        label: 'Monthly Average',
+                        data: Array(monthData.weeks.length).fill(monthData.monthlyAvg),
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [10, 5],
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: Math.min(...monthData.weeks.map(w => w.engagement)) - 5,
+                            max: Math.max(...monthData.weeks.map(w => w.engagement)) + 5,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createWeeklyMessagesChart() {
+            const ctx = document.getElementById('weeklyMessagesChart');
+            if (!ctx) return;
+
+            if (charts.weeklyMessages) {
+                charts.weeklyMessages.destroy();
+            }
+
+            const monthData = weeklyEngagementData[selectedYear][selectedMonth];
+            if (!monthData) return;
+
+            charts.weeklyMessages = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: monthData.weeks.map(w => w.week),
+                    datasets: [{
+                        label: 'Messages',
+                        data: monthData.weeks.map(w => w.messages),
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.8)',
+                            'rgba(46, 204, 113, 0.8)',
+                            'rgba(155, 89, 182, 0.8)',
+                            'rgba(241, 196, 15, 0.8)'
+                        ],
+                        borderColor: [
+                            '#3498db',
+                            '#2ecc71',
+                            '#9b59b6',
+                            '#f1c40f'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createWeeklyMembersChart() {
+            const ctx = document.getElementById('weeklyMembersChart');
+            if (!ctx) return;
+
+            if (charts.weeklyMembers) {
+                charts.weeklyMembers.destroy();
+            }
+
+            const monthData = weeklyEngagementData[selectedYear][selectedMonth];
+            if (!monthData) return;
+
+            charts.weeklyMembers = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthData.weeks.map(w => w.week),
+                    datasets: [{
+                        label: 'Active Members',
+                        data: monthData.weeks.map(w => w.activeMembers),
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#27ae60',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: Math.min(...monthData.weeks.map(w => w.activeMembers)) - 1,
+                            max: Math.max(...monthData.weeks.map(w => w.activeMembers)) + 1,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                stepSize: 1
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createWeeklyTrendsChart() {
+            const ctx = document.getElementById('weeklyTrendsChart');
+            if (!ctx) return;
+
+            if (charts.weeklyTrends) {
+                charts.weeklyTrends.destroy();
+            }
+
+            const monthData = weeklyEngagementData[selectedYear][selectedMonth];
+            if (!monthData) return;
+
+            // Calculate week-over-week growth
+            const growthRates = monthData.weeks.map((week, index) => {
+                if (index === 0) return 0;
+                const previous = monthData.weeks[index - 1];
+                return ((week.engagement - previous.engagement) / previous.engagement * 100);
+            });
+
+            charts.weeklyTrends = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: monthData.weeks.map(w => w.week),
+                    datasets: [{
+                        label: 'Week-over-Week Growth (%)',
+                        data: growthRates,
+                        backgroundColor: growthRates.map(rate => 
+                            rate > 0 ? 'rgba(39, 174, 96, 0.8)' : 
+                            rate < 0 ? 'rgba(231, 76, 60, 0.8)' : 'rgba(149, 165, 166, 0.8)'
+                        ),
+                        borderColor: growthRates.map(rate => 
+                            rate > 0 ? '#27ae60' : 
+                            rate < 0 ? '#e74c3c' : '#95a5a6'
+                        ),
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    return 'Growth: ' + (value >= 0 ? '+' : '') + value.toFixed(1) + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return (value >= 0 ? '+' : '') + value + '%';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }// server.js - Complete Enhanced Slack Dashboard for Render
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -757,6 +1492,260 @@ app.get('/', (req, res) => {
             color: white;
         }
         
+        /* Team Management Styles */
+        .team-management-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .add-member-section {
+            background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 100%);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-left: 5px solid #27ae60;
+            height: fit-content;
+        }
+
+        .member-list-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-input, .form-select {
+            padding: 12px 15px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #27ae60;
+            box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+            transform: scale(1.02);
+        }
+
+        .member-management-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .member-management-item {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .member-management-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .member-management-item.excellent {
+            border-left-color: #27ae60;
+        }
+
+        .member-management-item.good {
+            border-left-color: #3498db;
+        }
+
+        .member-management-item.warning {
+            border-left-color: #f39c12;
+        }
+
+        .member-management-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .member-management-info h4 {
+            margin: 0 0 5px 0;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .member-management-info p {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .member-management-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+            transform: scale(1.05);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+            transform: scale(1.05);
+        }
+
+        .member-management-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .management-stat-item {
+            text-align: center;
+            padding: 8px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 6px;
+            backdrop-filter: blur(10px);
+        }
+
+        .management-stat-value {
+            font-weight: 700;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+
+        .management-stat-label {
+            font-size: 0.7rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease-out;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+
+        @keyframes modalSlideIn {
+            from { transform: translateY(-50px) scale(0.9); }
+            to { transform: translateY(0) scale(1); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .btn-close {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .btn-close:hover {
+            background: linear-gradient(135deg, #7f8c8d, #6c7b7d);
+            transform: rotate(90deg);
+        }
+        
         @media (max-width: 768px) {
             .tab-navigation {
                 flex-direction: column;
@@ -791,6 +1780,11 @@ app.get('/', (req, res) => {
             .charts-grid {
                 grid-template-columns: 1fr;
             }
+            
+            .team-management-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
         }
     </style>
 </head>
@@ -824,6 +1818,10 @@ app.get('/', (req, res) => {
             <button class="tab-button" onclick="showTab('epnm')" id="tab-epnm">
                 🌵 EPNM
                 <span class="tab-badge" id="badge-epnm">8</span>
+            </button>
+            <button class="tab-button" onclick="showTab('manage-team')" id="tab-manage-team">
+                👥 Team Management
+                <span class="tab-badge" id="badge-manage-team">Edit</span>
             </button>
         </div>
 
@@ -906,6 +1904,100 @@ app.get('/', (req, res) => {
                     <div class="chart-title">📅 Month-over-Month</div>
                     <div class="chart-container">
                         <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Engagement Section -->
+            <div style="margin: 40px 0;">
+                <h3 style="color: #2c3e50; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
+                    📊 Weekly Engagement Analysis
+                    <span style="font-size: 0.8rem; background: #3498db; color: white; padding: 4px 12px; border-radius: 15px;">
+                        Interactive
+                    </span>
+                </h3>
+                
+                <!-- Month Selector -->
+                <div style="display: flex; justify-content: center; margin-bottom: 25px; gap: 15px; flex-wrap: wrap;">
+                    <button class="btn secondary" onclick="setSelectedMonth(0)" id="month-btn-0">January</button>
+                    <button class="btn secondary" onclick="setSelectedMonth(1)" id="month-btn-1">February</button>
+                    <button class="btn secondary" onclick="setSelectedMonth(2)" id="month-btn-2">March</button>
+                    <button class="btn secondary" onclick="setSelectedMonth(3)" id="month-btn-3">April</button>
+                    <button class="btn secondary" onclick="setSelectedMonth(4)" id="month-btn-4">May</button>
+                    <button class="btn" onclick="setSelectedMonth(5)" id="month-btn-5">June</button>
+                </div>
+
+                <!-- Weekly Charts Grid -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-title" id="weeklyEngagementTitle">📈 Weekly Engagement - June 2024</div>
+                        <div class="chart-container">
+                            <canvas id="weeklyEngagementChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title" id="weeklyMessagesTitle">💬 Weekly Messages - June 2024</div>
+                        <div class="chart-container">
+                            <canvas id="weeklyMessagesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title" id="weeklyMembersTitle">👥 Weekly Active Members - June 2024</div>
+                        <div class="chart-container">
+                            <canvas id="weeklyMembersChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-title" id="weeklyTrendsTitle">📊 Weekly vs Monthly Average - June 2024</div>
+                        <div class="chart-container">
+                            <canvas id="weeklyTrendsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly KPIs -->
+                <div class="kpi-grid" style="margin-top: 30px;">
+                    <div class="kpi-card excellent">
+                        <div class="kpi-label">Current Week Performance</div>
+                        <div class="kpi-value" id="currentWeekScore">99</div>
+                        <div class="kpi-change positive">📈 Best week yet</div>
+                        <div class="mom-indicator">
+                            <span class="mom-percentage">+2.1%</span>
+                            <span>vs last week</span>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card good">
+                        <div class="kpi-label">Monthly Progress</div>
+                        <div class="kpi-value" id="monthlyProgress">96%</div>
+                        <div class="kpi-change positive">🎯 On track</div>
+                        <div class="mom-indicator">
+                            <span class="mom-percentage">+4 weeks</span>
+                            <span>consistent growth</span>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card warning">
+                        <div class="kpi-label">Week-over-Week Growth</div>
+                        <div class="kpi-value" id="weekOverWeekGrowth">+2.1%</div>
+                        <div class="kpi-change positive">📊 Steady improvement</div>
+                        <div class="mom-indicator">
+                            <span class="mom-percentage">+6 pts</span>
+                            <span>total month gain</span>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card excellent">
+                        <div class="kpi-label">Best Week Score</div>
+                        <div class="kpi-value" id="bestWeekScore">99</div>
+                        <div class="kpi-change positive">🏆 Peak performance</div>
+                        <div class="mom-indicator">
+                            <span class="mom-percentage">Week 4</span>
+                            <span>current month</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1062,6 +2154,197 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
+        <!-- Team Management Tab -->
+        <div id="tab-content-manage-team" class="tab-content">
+            <h2 class="section-title">👥 Advanced Team Management</h2>
+            
+            <div class="team-management-grid">
+                <!-- Add Member Section -->
+                <div class="add-member-section">
+                    <h3 style="color: #27ae60; margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px;">
+                        ➕ Add New Team Member
+                        <span class="performance-indicator good">Enhanced</span>
+                    </h3>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="newMemberName">Full Name *</label>
+                            <input type="text" id="newMemberName" class="form-input" placeholder="e.g., Sarah Johnson" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="newMemberRole">Role</label>
+                            <select id="newMemberRole" class="form-select">
+                                <option value="Team Member">Team Member</option>
+                                <option value="Team Lead">Team Lead</option>
+                                <option value="Manager">Manager</option>
+                                <option value="Regional Manager">Regional Manager</option>
+                                <option value="Primary Owner">Primary Owner</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="newMemberState">Region *</label>
+                            <select id="newMemberState" class="form-select" required>
+                                <option value="">Select Region</option>
+                                <option value="Colorado">🏔️ Colorado</option>
+                                <option value="West Texas">🤠 West Texas</option>
+                                <option value="EPNM">🌵 EPNM</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="newMemberMessages">Monthly Messages</label>
+                            <input type="number" id="newMemberMessages" class="form-input" placeholder="85" min="0" max="200" value="85">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="newMemberEngagement">Engagement Score</label>
+                            <input type="range" id="newMemberEngagement" class="form-input" min="0" max="100" value="85" oninput="updateEngagementDisplay(this.value)">
+                            <div style="text-align: center; margin-top: 5px; font-weight: 600; color: #2c3e50;">
+                                <span id="engagementDisplay">85</span>%
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="newMemberTrend">Performance Trend</label>
+                            <select id="newMemberTrend" class="form-select">
+                                <option value="up">📈 Improving</option>
+                                <option value="stable">➡️ Stable</option>
+                                <option value="down">📉 Declining</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button class="btn success" onclick="addNewMember()">
+                            ➕ Add Team Member
+                        </button>
+                        <button class="btn secondary" onclick="clearAddForm()">
+                            🔄 Clear Form
+                        </button>
+                    </div>
+                    
+                    <!-- Quick Stats -->
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.7); border-radius: 10px;">
+                        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">Team Overview</h4>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
+                            <div>
+                                <div style="font-weight: 700; color: #3498db;" id="totalMembersCount">0</div>
+                                <div style="font-size: 0.8rem; color: #7f8c8d;">Total</div>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; color: #27ae60;" id="avgEngagementScore">0</div>
+                                <div style="font-size: 0.8rem; color: #7f8c8d;">Avg Score</div>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; color: #f39c12;" id="topPerformersCount">0</div>
+                                <div style="font-size: 0.8rem; color: #7f8c8d;">Top 90%+</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Member List Section -->
+                <div class="member-list-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <div>
+                            <h3 style="margin: 0 0 5px 0; color: #2c3e50; display: flex; align-items: center; gap: 10px;">
+                                Current Team Members
+                                <span class="performance-indicator excellent" id="teamSizeIndicator">0 Members</span>
+                            </h3>
+                            <p style="margin: 0; color: #7f8c8d;">Manage your team's Slack engagement profiles</p>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn" onclick="bulkUpdateMoM()" style="background: #9b59b6;">
+                                📊 Update MoM Data
+                            </button>
+                            <button class="btn secondary" onclick="exportTeamData()">
+                                📋 Export Team
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Member List -->
+                    <div class="member-management-list" id="memberManagementList">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">👥</div>
+                            <p>No team members loaded. Click "Load Live Data" to get started.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Member Modal -->
+        <div id="editMemberModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">✏️ Edit Team Member</h3>
+                    <button class="btn-close" onclick="closeEditModal()">×</button>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="editMemberName">Full Name *</label>
+                        <input type="text" id="editMemberName" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="editMemberRole">Role</label>
+                        <select id="editMemberRole" class="form-select">
+                            <option value="Team Member">Team Member</option>
+                            <option value="Team Lead">Team Lead</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Regional Manager">Regional Manager</option>
+                            <option value="Primary Owner">Primary Owner</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="editMemberState">Region *</label>
+                        <select id="editMemberState" class="form-select" required>
+                            <option value="Colorado">🏔️ Colorado</option>
+                            <option value="West Texas">🤠 West Texas</option>
+                            <option value="EPNM">🌵 EPNM</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="editMemberMessages">Monthly Messages</label>
+                        <input type="number" id="editMemberMessages" class="form-input" min="0" max="200">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="editMemberEngagement">Engagement Score</label>
+                        <input type="range" id="editMemberEngagement" class="form-input" min="0" max="100" oninput="updateEditEngagementDisplay(this.value)">
+                        <div style="text-align: center; margin-top: 5px; font-weight: 600; color: #2c3e50;">
+                            <span id="editEngagementDisplay">85</span>%
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="editMemberTrend">Performance Trend</label>
+                        <select id="editMemberTrend" class="form-select">
+                            <option value="up">📈 Improving</option>
+                            <option value="stable">➡️ Stable</option>
+                            <option value="down">📉 Declining</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 25px;">
+                    <button class="btn success" onclick="saveEditedMember()">
+                        💾 Save Changes
+                    </button>
+                    <button class="btn secondary" onclick="closeEditModal()">
+                        ❌ Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Status Message -->
         <div class="status" id="statusMessage">
             🚀 Complete Enhanced Slack Dashboard loaded successfully on Render
@@ -1130,6 +2413,9 @@ app.get('/', (req, res) => {
                 // Load regional data if needed
                 if (tabName !== 'executive' && tabName !== 'analytics') {
                     loadRegionalData(tabName);
+                } else if (tabName === 'manage-team') {
+                    renderMemberManagementList();
+                    updateTeamOverview();
                 }
 
             } catch (error) {
@@ -1151,9 +2437,7 @@ app.get('/', (req, res) => {
                     teamMembers = result.data;
                     updateConnectionStatus('connected', \`Live data - \${teamMembers.length} team members loaded\`);
                     
-                    updateKPIs();
-                    updateCharts();
-                    updateTabBadges();
+                    updateAllDisplays();
                     loadRegionalData(currentTab);
                     
                     updateStatus(\`✅ Loaded \${teamMembers.length} team members from live data\`);
@@ -1172,10 +2456,7 @@ app.get('/', (req, res) => {
             updateStatus('🔄 Refreshing all analytics...');
             
             setTimeout(() => {
-                updateKPIs();
-                updateCharts();
-                updateTabBadges();
-                loadRegionalData(currentTab);
+                updateAllDisplays();
                 updateStatus('✅ Dashboard refreshed successfully');
             }, 1500);
         }
@@ -1640,6 +2921,20 @@ app.get('/', (req, res) => {
             });
         });
 
+        // Modal event handlers
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('editMemberModal');
+            if (e.target === modal) {
+                closeEditModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeEditModal();
+            }
+        });
+
         // Initialize when DOM is ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializeDashboard);
@@ -1655,7 +2950,12 @@ app.get('/', (req, res) => {
             refreshData: refreshData,
             exportData: exportData,
             currentTab: () => currentTab,
-            charts: () => charts
+            charts: () => charts,
+            addNewMember: addNewMember,
+            editMember: editMember,
+            deleteMember: deleteMember,
+            bulkUpdateMoM: bulkUpdateMoM,
+            exportTeamData: exportTeamData
         };
 
         console.log('🎯 Complete Enhanced Slack Dashboard loaded successfully on Render!');
