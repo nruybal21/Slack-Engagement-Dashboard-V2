@@ -31,7 +31,7 @@ const sampleTeamData = [
         lastActive: '2024-07-02T08:45:00Z', timezone: 'MT', isActive: true
     },
     { 
-        id: 'U004', name: 'Jeff Goulet', role: 'Team Member', state: 'Colorado', 
+        id: 'U004', name: 'Jeff Goulet', role: 'Team Member', state: 'West Texas', 
         messages: 118, reactions: 167, comments: 38, responseTime: 2.4, 
         engagementScore: 85, trend: 'stable', performance: 'good',
         lastActive: '2024-07-02T11:20:00Z', timezone: 'MT', isActive: true
@@ -48,90 +48,33 @@ const sampleTeamData = [
         engagementScore: 91, trend: 'up', performance: 'excellent',
         lastActive: '2024-07-02T10:30:00Z', timezone: 'MT', isActive: true
     },
+    
     { 
-        id: 'U007', name: 'Haley Santiago', role: 'Team Member', state: 'Colorado', 
-        messages: 125, reactions: 172, comments: 41, responseTime: 2.3, 
-        engagementScore: 87, trend: 'stable', performance: 'good',
-        lastActive: '2024-07-02T08:15:00Z', timezone: 'MT', isActive: true
-    },
-    { 
-        id: 'U008', name: 'Constance Montgomery', role: 'Team Member', state: 'West Texas', 
+        id: 'U007', name: 'Constance Montgomery', role: 'Team Member', state: 'West Texas', 
         messages: 148, reactions: 218, comments: 58, responseTime: 1.7, 
         engagementScore: 94, trend: 'up', performance: 'excellent',
         lastActive: '2024-07-02T09:45:00Z', timezone: 'CT', isActive: true
     },
+    
     { 
-        id: 'U009', name: 'Kris Schmidt', role: 'Team Member', state: 'West Texas', 
-        messages: 137, reactions: 201, comments: 51, responseTime: 2.0, 
-        engagementScore: 90, trend: 'up', performance: 'excellent',
-        lastActive: '2024-07-02T11:00:00Z', timezone: 'CT', isActive: true
-    },
-    { 
-        id: 'U010', name: 'Sandi Franklin', role: 'Team Member', state: 'West Texas', 
-        messages: 122, reactions: 178, comments: 39, responseTime: 2.5, 
-        engagementScore: 86, trend: 'stable', performance: 'good',
-        lastActive: '2024-07-02T08:30:00Z', timezone: 'CT', isActive: true
-    },
-    { 
-        id: 'U011', name: 'Jonathan Barnhart', role: 'Team Member', state: 'West Texas', 
-        messages: 131, reactions: 187, comments: 44, responseTime: 2.2, 
-        engagementScore: 89, trend: 'up', performance: 'good',
-        lastActive: '2024-07-02T10:45:00Z', timezone: 'CT', isActive: true
-    },
-    { 
-        id: 'U012', name: 'Christian Melendez', role: 'Team Member', state: 'West Texas', 
-        messages: 145, reactions: 212, comments: 55, responseTime: 1.8, 
-        engagementScore: 93, trend: 'up', performance: 'excellent',
-        lastActive: '2024-07-02T09:15:00Z', timezone: 'CT', isActive: true
-    },
-    { 
-        id: 'U013', name: 'Scott Duerfeldt', role: 'Team Member', state: 'EPNM', 
+        id: 'U008', name: 'Scott Duerfeldt', role: 'Manager', state: 'EPNM', 
         messages: 127, reactions: 181, comments: 42, responseTime: 2.3, 
         engagementScore: 88, trend: 'stable', performance: 'good',
         lastActive: '2024-07-02T10:35:00Z', timezone: 'MT', isActive: true
     },
     { 
-        id: 'U014', name: 'Gidget Miller', role: 'Team Member', state: 'EPNM', 
+        id: 'U009', name: 'Gidget Miller', role: 'Team Member', state: 'EPNM', 
         messages: 136, reactions: 194, comments: 48, responseTime: 2.1, 
         engagementScore: 91, trend: 'up', performance: 'excellent',
         lastActive: '2024-07-02T11:30:00Z', timezone: 'MT', isActive: true
     },
+    
     { 
-        id: 'U015', name: 'Ray Woodruff', role: 'Team Member', state: 'EPNM', 
-        messages: 119, reactions: 169, comments: 37, responseTime: 2.6, 
-        engagementScore: 84, trend: 'down', performance: 'good',
-        lastActive: '2024-07-02T08:00:00Z', timezone: 'MT', isActive: true
-    },
-    { 
-        id: 'U016', name: 'Aaron Hartman', role: 'Team Member', state: 'EPNM', 
-        messages: 133, reactions: 192, comments: 46, responseTime: 2.2, 
-        engagementScore: 89, trend: 'up', performance: 'good',
-        lastActive: '2024-07-02T10:35:00Z', timezone: 'MT', isActive: true
-    },
-    { 
-        id: 'U017', name: 'Erica Torres', role: 'Team Member', state: 'EPNM', 
-        messages: 141, reactions: 204, comments: 54, responseTime: 1.9, 
-        engagementScore: 92, trend: 'up', performance: 'excellent',
-        lastActive: '2024-07-02T11:15:00Z', timezone: 'MT', isActive: true
-    },
-    { 
-        id: 'U018', name: 'Jake Alsept', role: 'Team Member', state: 'EPNM', 
-        messages: 124, reactions: 175, comments: 40, responseTime: 2.4, 
-        engagementScore: 85, trend: 'stable', performance: 'good',
-        lastActive: '2024-07-02T08:30:00Z', timezone: 'MT', isActive: true
-    },
-    { 
-        id: 'U019', name: 'Jen Hettum', role: 'Team Member', state: 'EPNM', 
+        id: 'U010', name: 'Jen Hettum', role: 'Team Member', state: 'EPNM', 
         messages: 138, reactions: 199, comments: 50, responseTime: 2.0, 
         engagementScore: 90, trend: 'up', performance: 'excellent',
         lastActive: '2024-07-02T09:45:00Z', timezone: 'MT', isActive: true
     },
-    { 
-        id: 'U020', name: 'Hector R Ramirez-Bruno', role: 'Team Member', state: 'EPNM', 
-        messages: 138, reactions: 199, comments: 50, responseTime: 2.3, 
-        engagementScore: 88, trend: 'stable', performance: 'good',
-        lastActive: '2024-07-02T10:05:00Z', timezone: 'MT', isActive: true
-    }
 ];
 
 // Store team data - ONLY ONE DECLARATION
