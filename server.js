@@ -86,13 +86,13 @@
         function updateConnectionStatus(status, message) {
             const statusElement = document.getElementById('connectionStatus');
             if (statusElement) {
-                statusElement.className = \`connection-status \${status}\`;
+                statusElement.className = 'connection-status ' + status;
                 const icons = {
                     connected: '✅',
                     loading: '🔄',
                     error: '❌'
                 };
-                statusElement.innerHTML = \`\${icons[status] || '🔌'} \${message}\`;
+                statusElement.innerHTML = (icons[status] || '🔌') + ' ' + message;
                 isConnected = status === 'connected';
             }
         }
@@ -125,7 +125,7 @@
 
             // Generate new ID
             const maxId = Math.max(...teamMembers.map(m => parseInt(m.id.substring(1)) || 0), 0);
-            const newId = \`U\${String(maxId + 1).padStart(3, '0')}\`;
+            const newId = 'U' + String(maxId + 1).padStart(3, '0');
 
             // Gather form data
             const engagementScore = parseInt(document.getElementById('newMemberEngagement').value) || 85;
@@ -153,7 +153,7 @@
             clearAddForm();
             updateAllDisplays();
             
-            updateStatus(\`✅ Added new team member: \${newMember.name} to \${newMember.state}\`);
+            updateStatus('✅ Added new team member: ' + newMember.name + ' to ' + newMember.state);
         }
 
         function clearAddForm() {
@@ -218,17 +218,17 @@
             closeEditModal();
             updateAllDisplays();
             
-            updateStatus(\`✅ Updated team member: \${name}\`);
+            updateStatus('✅ Updated team member: ' + name);
         }
 
         function deleteMember(memberId) {
             const member = teamMembers.find(m => m.id === memberId);
             if (!member) return;
 
-            if (confirm(\`Are you sure you want to remove \${member.name} from the team?\`)) {
+            if (confirm('Are you sure you want to remove ' + member.name + ' from the team?')) {
                 teamMembers = teamMembers.filter(m => m.id !== memberId);
                 updateAllDisplays();
-                updateStatus(\`✅ Removed team member: \${member.name}\`);
+                updateStatus('✅ Removed team member: ' + member.name);
             }
         }
 
@@ -289,7 +289,7 @@
                 const url = URL.createObjectURL(dataBlob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = \`team-export-\${new Date().toISOString().split('T')[0]}.json\`;
+                link.download = 'team-export-' + new Date().toISOString().split('T')[0] + '.json';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -310,12 +310,7 @@
             container.innerHTML = '';
 
             if (teamMembers.length === 0) {
-                container.innerHTML = \`
-                    <div class="empty-state">
-                        <div class="empty-state-icon">👥</div>
-                        <p>No team members loaded. Click "Load Live Data" to get started.</p>
-                    </div>
-                \`;
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div><p>No team members loaded. Click "Load Live Data" to get started.</p></div>';
                 return;
             }
 
@@ -325,49 +320,45 @@
                                        member.performance === 'warning' ? '#f39c12' : '#e74c3c';
 
                 const card = document.createElement('div');
-                card.className = \`member-management-item \${member.performance}\`;
+                card.className = 'member-management-item ' + member.performance;
                 card.style.borderLeftColor = performanceColor;
                 
-                card.innerHTML = \`
-                    <div class="member-management-header">
-                        <div class="member-management-info">
-                            <h4>\${member.name}</h4>
-                            <p>\${member.role} • \${member.state}</p>
-                        </div>
-                        <div class="member-management-actions">
-                            <button class="btn-small btn-edit" onclick="editMember('\${member.id}')">✏️ Edit</button>
-                            <button class="btn-small btn-delete" onclick="deleteMember('\${member.id}')">🗑️ Delete</button>
-                        </div>
-                    </div>
-                    
-                    <div class="member-management-stats">
-                        <div class="management-stat-item">
-                            <div class="management-stat-value">\${member.engagementScore}</div>
-                            <div class="management-stat-label">Score</div>
-                        </div>
-                        <div class="management-stat-item">
-                            <div class="management-stat-value">\${member.messages}</div>
-                            <div class="management-stat-label">Messages</div>
-                        </div>
-                        <div class="management-stat-item">
-                            <div class="management-stat-value">\${member.responseTime}h</div>
-                            <div class="management-stat-label">Response</div>
-                        </div>
-                        <div class="management-stat-item">
-                            <div class="management-stat-value">\${member.trend === 'up' ? '📈' : member.trend === 'down' ? '📉' : '➡️'}</div>
-                            <div class="management-stat-label">Trend</div>
-                        </div>
-                    </div>
-                    
-                    <div style="text-align: center; margin-top: 15px;">
-                        <span class="performance-indicator \${member.performance}">
-                            \${member.performance} performance
-                        </span>
-                        <span style="margin-left: 10px; font-size: 0.8rem; color: #7f8c8d;">
-                            Last active: \${new Date(member.lastActive).toLocaleString()}
-                        </span>
-                    </div>
-                \`;
+                card.innerHTML = '<div class="member-management-header">' +
+                    '<div class="member-management-info">' +
+                        '<h4>' + member.name + '</h4>' +
+                        '<p>' + member.role + ' • ' + member.state + '</p>' +
+                    '</div>' +
+                    '<div class="member-management-actions">' +
+                        '<button class="btn-small btn-edit" onclick="editMember(\'' + member.id + '\')">✏️ Edit</button>' +
+                        '<button class="btn-small btn-delete" onclick="deleteMember(\'' + member.id + '\')">🗑️ Delete</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="member-management-stats">' +
+                    '<div class="management-stat-item">' +
+                        '<div class="management-stat-value">' + member.engagementScore + '</div>' +
+                        '<div class="management-stat-label">Score</div>' +
+                    '</div>' +
+                    '<div class="management-stat-item">' +
+                        '<div class="management-stat-value">' + member.messages + '</div>' +
+                        '<div class="management-stat-label">Messages</div>' +
+                    '</div>' +
+                    '<div class="management-stat-item">' +
+                        '<div class="management-stat-value">' + member.responseTime + 'h</div>' +
+                        '<div class="management-stat-label">Response</div>' +
+                    '</div>' +
+                    '<div class="management-stat-item">' +
+                        '<div class="management-stat-value">' + (member.trend === 'up' ? '📈' : member.trend === 'down' ? '📉' : '➡️') + '</div>' +
+                        '<div class="management-stat-label">Trend</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="text-align: center; margin-top: 15px;">' +
+                    '<span class="performance-indicator ' + member.performance + '">' +
+                        member.performance + ' performance' +
+                    '</span>' +
+                    '<span style="margin-left: 10px; font-size: 0.8rem; color: #7f8c8d;">' +
+                        'Last active: ' + new Date(member.lastActive).toLocaleString() +
+                    '</span>' +
+                '</div>';
                 
                 container.appendChild(card);
             });
@@ -382,7 +373,7 @@
             document.getElementById('totalMembersCount').textContent = totalMembers;
             document.getElementById('avgEngagementScore').textContent = avgEngagement;
             document.getElementById('topPerformersCount').textContent = topPerformers;
-            document.getElementById('teamSizeIndicator').textContent = \`\${totalMembers} Members\`;
+            document.getElementById('teamSizeIndicator').textContent = totalMembers + ' Members';
         }
 
         // Weekly engagement functions
@@ -2396,19 +2387,19 @@ app.get('/', (req, res) => {
                 });
 
                 // Show selected tab content
-                const selectedContent = document.getElementById(\`tab-content-\${tabName}\`);
+                const selectedContent = document.getElementById('tab-content-' + tabName);
                 if (selectedContent) {
                     selectedContent.classList.add('active');
                 }
 
                 // Add active class to selected tab button
-                const selectedButton = document.getElementById(\`tab-\${tabName}\`);
+                const selectedButton = document.getElementById('tab-' + tabName);
                 if (selectedButton) {
                     selectedButton.classList.add('active');
                 }
 
                 currentTab = tabName;
-                updateStatus(\`📊 Switched to \${tabName} view\`);
+                updateStatus('📊 Switched to ' + tabName + ' view');
                 
                 // Load regional data if needed
                 if (tabName !== 'executive' && tabName !== 'analytics') {
@@ -2435,12 +2426,12 @@ app.get('/', (req, res) => {
 
                 if (result.success) {
                     teamMembers = result.data;
-                    updateConnectionStatus('connected', \`Live data - \${teamMembers.length} team members loaded\`);
+                    updateConnectionStatus('connected', 'Live data - ' + teamMembers.length + ' team members loaded');
                     
                     updateAllDisplays();
                     loadRegionalData(currentTab);
                     
-                    updateStatus(\`✅ Loaded \${teamMembers.length} team members from live data\`);
+                    updateStatus('✅ Loaded ' + teamMembers.length + ' team members from live data');
                 } else {
                     throw new Error(result.error || 'Failed to load data');
                 }
@@ -2471,7 +2462,7 @@ app.get('/', (req, res) => {
                 const slackResponse = await fetch('/api/slack/test');
                 const slackData = await slackResponse.json();
                 
-                updateStatus(\`✅ API Test Complete - Server: \${healthData.status}, Slack: \${slackData.success ? 'Ready' : 'Sample Mode'}\`);
+                updateStatus('✅ API Test Complete - Server: ' + healthData.status + ', Slack: ' + (slackData.success ? 'Ready' : 'Sample Mode'));
                 
             } catch (error) {
                 console.error('Connection test failed:', error);
@@ -2502,7 +2493,7 @@ app.get('/', (req, res) => {
                 const url = URL.createObjectURL(dataBlob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = \`slack-dashboard-render-\${new Date().toISOString().split('T')[0]}.json\`;
+                link.download = 'slack-dashboard-render-' + new Date().toISOString().split('T')[0] + '.json';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -2563,6 +2554,13 @@ app.get('/', (req, res) => {
                 createRegionalChart();
                 createPerformanceChart();
                 createMonthlyChart();
+                
+                // Initialize weekly charts on first load
+                if (currentTab === 'executive') {
+                    updateWeeklyCharts();
+                    updateWeeklyKPIs();
+                }
+                
                 console.log('Charts updated successfully');
             } catch (error) {
                 console.error('Error updating charts:', error);
@@ -2846,39 +2844,38 @@ app.get('/', (req, res) => {
                 
                 const gridElement = document.getElementById(gridId);
                 if (gridElement && regionMembers.length > 0) {
-                    gridElement.innerHTML = regionMembers.map(member => \`
-                        <div class="member-card \${member.performance}">
-                            <div class="member-header">
-                                <h4>\${member.name}</h4>
-                                <p>\${member.role}</p>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <span class="performance-indicator \${member.performance}">\${member.performance}</span>
-                                <span style="font-size: 1.2rem;">\${member.trend === 'up' ? '📈' : member.trend === 'down' ? '📉' : '➡️'}</span>
-                            </div>
-                            <div class="member-stats">
-                                <div class="stat-item">
-                                    <div class="stat-value">\${member.engagementScore}</div>
-                                    <div class="stat-label">Score</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-value">\${member.messages}</div>
-                                    <div class="stat-label">Messages</div>
-                                </div>
-                                <div class="stat-item">
-                                    <div class="stat-value">\${member.responseTime}h</div>
-                                    <div class="stat-label">Response</div>
-                                </div>
-                            </div>
-                        </div>
-                    \`).join('');
+                    gridElement.innerHTML = regionMembers.map(member => 
+                        '<div class="member-card ' + member.performance + '">' +
+                            '<div class="member-header">' +
+                                '<h4>' + member.name + '</h4>' +
+                                '<p>' + member.role + '</p>' +
+                            '</div>' +
+                            '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">' +
+                                '<span class="performance-indicator ' + member.performance + '">' + member.performance + '</span>' +
+                                '<span style="font-size: 1.2rem;">' + (member.trend === 'up' ? '📈' : member.trend === 'down' ? '📉' : '➡️') + '</span>' +
+                            '</div>' +
+                            '<div class="member-stats">' +
+                                '<div class="stat-item">' +
+                                    '<div class="stat-value">' + member.engagementScore + '</div>' +
+                                    '<div class="stat-label">Score</div>' +
+                                '</div>' +
+                                '<div class="stat-item">' +
+                                    '<div class="stat-value">' + member.messages + '</div>' +
+                                    '<div class="stat-label">Messages</div>' +
+                                '</div>' +
+                                '<div class="stat-item">' +
+                                    '<div class="stat-value">' + member.responseTime + 'h</div>' +
+                                    '<div class="stat-label">Response</div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>'
+                    ).join('');
                 } else if (gridElement) {
-                    gridElement.innerHTML = \`
-                        <div class="empty-state">
-                            <div class="empty-state-icon">\${region === 'colorado' ? '🏔️' : region === 'west-texas' ? '🤠' : '🌵'}</div>
-                            <p>No team members found in \${regionName}. Load data to see team members.</p>
-                        </div>
-                    \`;
+                    gridElement.innerHTML = '<div class="empty-state">' +
+                            '<div class="empty-state-icon">' + (region === 'colorado' ? '🏔️' : region === 'west-texas' ? '🤠' : '🌵') + '</div>' +
+                            '<p>No team members found in ' + regionName + '. Load data to see team members.</p>' +
+                        '</div>';
+                }
                 }
                 
             } catch (error) {
@@ -2955,7 +2952,9 @@ app.get('/', (req, res) => {
             editMember: editMember,
             deleteMember: deleteMember,
             bulkUpdateMoM: bulkUpdateMoM,
-            exportTeamData: exportTeamData
+            exportTeamData: exportTeamData,
+            setSelectedMonth: setSelectedMonth,
+            weeklyData: () => weeklyEngagementData
         };
 
         console.log('🎯 Complete Enhanced Slack Dashboard loaded successfully on Render!');
